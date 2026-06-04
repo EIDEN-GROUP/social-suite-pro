@@ -14,16 +14,161 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      companies: {
+        Row: {
+          accent_color: string
+          bio: string | null
+          created_at: string
+          followers: string | null
+          following: number | null
+          id: string
+          logo_url: string | null
+          name: string
+          profile_pic_url: string | null
+          slug: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          accent_color?: string
+          bio?: string | null
+          created_at?: string
+          followers?: string | null
+          following?: number | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          profile_pic_url?: string | null
+          slug: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          accent_color?: string
+          bio?: string | null
+          created_at?: string
+          followers?: string | null
+          following?: number | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          profile_pic_url?: string | null
+          slug?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      posts: {
+        Row: {
+          caption: string | null
+          client_comment: string | null
+          company_id: string
+          created_at: string
+          decided_at: string | null
+          id: string
+          media_type: string | null
+          media_url: string | null
+          platform: Database["public"]["Enums"]["platform"]
+          position: number
+          post_type: Database["public"]["Enums"]["post_type"]
+          scheduled_at: string | null
+          status: Database["public"]["Enums"]["approval_status"]
+          updated_at: string
+        }
+        Insert: {
+          caption?: string | null
+          client_comment?: string | null
+          company_id: string
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          platform: Database["public"]["Enums"]["platform"]
+          position?: number
+          post_type?: Database["public"]["Enums"]["post_type"]
+          scheduled_at?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
+          updated_at?: string
+        }
+        Update: {
+          caption?: string | null
+          client_comment?: string | null
+          company_id?: string
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          platform?: Database["public"]["Enums"]["platform"]
+          position?: number
+          post_type?: Database["public"]["Enums"]["post_type"]
+          scheduled_at?: string | null
+          status?: Database["public"]["Enums"]["approval_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      user_company_id: { Args: { _user_id: string }; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "superadmin" | "client"
+      approval_status: "pending" | "approved" | "rejected"
+      platform: "instagram" | "tiktok" | "facebook" | "twitter" | "linkedin"
+      post_type: "post" | "reel" | "story" | "carousel"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +295,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["superadmin", "client"],
+      approval_status: ["pending", "approved", "rejected"],
+      platform: ["instagram", "tiktok", "facebook", "twitter", "linkedin"],
+      post_type: ["post", "reel", "story", "carousel"],
+    },
   },
 } as const
