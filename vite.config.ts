@@ -12,5 +12,11 @@ export default defineConfig({
   },
   nitro: {
     preset: "vercel",
+    vercel: { entryFormat: "node" },
+    output: {
+      dir: ".vercel/output",
+      serverDir: ".vercel/output/functions/__server.func",
+      publicDir: ".vercel/output/static",
+    },
   },
 });
