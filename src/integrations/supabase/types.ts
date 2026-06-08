@@ -18,10 +18,14 @@ export type Database = {
         Row: {
           accent_color: string
           bio: string | null
+          category: string | null
+          client_password: string
+          cover_url: string | null
           created_at: string
           followers: string | null
           following: number | null
           id: string
+          link: string | null
           logo_url: string | null
           name: string
           profile_pic_url: string | null
@@ -32,10 +36,14 @@ export type Database = {
         Insert: {
           accent_color?: string
           bio?: string | null
+          category?: string | null
+          client_password?: string
+          cover_url?: string | null
           created_at?: string
           followers?: string | null
           following?: number | null
           id?: string
+          link?: string | null
           logo_url?: string | null
           name: string
           profile_pic_url?: string | null
@@ -46,10 +54,14 @@ export type Database = {
         Update: {
           accent_color?: string
           bio?: string | null
+          category?: string | null
+          client_password?: string
+          cover_url?: string | null
           created_at?: string
           followers?: string | null
           following?: number | null
           id?: string
+          link?: string | null
           logo_url?: string | null
           name?: string
           profile_pic_url?: string | null
@@ -59,6 +71,71 @@ export type Database = {
         }
         Relationships: []
       }
+      contacts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          message: string
+          name: string
+          phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message: string
+          name: string
+          phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+          name?: string
+          phone?: string | null
+        }
+        Relationships: []
+      }
+      highlights: {
+        Row: {
+          company_id: string
+          created_at: string
+          emoji: string | null
+          id: string
+          image: string | null
+          label: string | null
+          position: number
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          image?: string | null
+          label?: string | null
+          position?: number
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          emoji?: string | null
+          id?: string
+          image?: string | null
+          label?: string | null
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "highlights_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           caption: string | null
@@ -66,6 +143,7 @@ export type Database = {
           company_id: string
           created_at: string
           decided_at: string | null
+          extra_media: Json
           id: string
           media_type: string | null
           media_url: string | null
@@ -82,6 +160,7 @@ export type Database = {
           company_id: string
           created_at?: string
           decided_at?: string | null
+          extra_media?: Json
           id?: string
           media_type?: string | null
           media_url?: string | null
@@ -98,6 +177,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           decided_at?: string | null
+          extra_media?: Json
           id?: string
           media_type?: string | null
           media_url?: string | null
