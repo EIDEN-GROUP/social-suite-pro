@@ -1,12 +1,14 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { signUpStudioAdmin } from "@/lib/admin.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in — Atelier" },
+      { title: "Sign in - Atelier" },
       { name: "description", content: "Sign in to the Atelier approval studio." },
     ],
   }),
@@ -20,11 +22,18 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [bootstrapAllowed, setBootstrapAllowed] = useState(false);
+  const createStudioAdmin = useServerFn(signUpStudioAdmin);
+
+  function postLoginDest() {
+    const saved = typeof window !== "undefined" ? sessionStorage.getItem("post_login_redirect") : null;
+    if (saved) sessionStorage.removeItem("post_login_redirect");
+    return saved && saved.startsWith("/admin") ? saved : "/admin";
+  }
 
   useEffect(() => {
-    // Auto-redirect if already signed in
-    supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) {
+    // Auto-redirect if already signed in (getSession refreshes an expired token)
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session?.user) {
         // Check whether any superadmin exists yet (open signup if not)
         const { count } = await supabase
           .from("user_roles")
@@ -36,10 +45,10 @@ function AuthPage() {
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role, company_id")
-        .eq("user_id", data.user.id);
+        .eq("user_id", data.session.user.id);
       const isAdmin = roles?.some((r) => r.role === "superadmin");
-      if (isAdmin) navigate({ to: "/admin" });
-      else navigate({ to: "/workspace" });
+      if (isAdmin) navigate({ to: postLoginDest() });
+      else { await supabase.auth.signOut(); }
     });
   }, [navigate]);
 
@@ -48,13 +57,11 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin + "/auth" },
-        });
+        // Create the studio admin already-confirmed (no email step), then sign in.
+        await createStudioAdmin({ data: { email, password } });
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        toast.success("Account created. Signing you in…");
+        toast.success("Studio account created.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -66,7 +73,8 @@ function AuthPage() {
         .select("role")
         .eq("user_id", data.user.id);
       const isAdmin = roles?.some((r) => r.role === "superadmin");
-      navigate({ to: isAdmin ? "/admin" : "/workspace" });
+      if (isAdmin) navigate({ to: postLoginDest() });
+      else { await supabase.auth.signOut(); toast.error("This sign-in is for the studio only."); }
     } catch (err) {
       toast.error((err as Error).message);
     } finally {

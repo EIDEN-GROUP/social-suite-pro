@@ -2,6 +2,7 @@
 import { createMiddleware } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { createClient } from '@supabase/supabase-js'
+import ws from 'ws'
 import type { Database } from './types'
 
 
@@ -57,6 +58,9 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
           persistSession: false,
           autoRefreshToken: false,
         },
+        // Node < 22 lacks a global WebSocket; supabase-js's Realtime client
+        // needs one at construction even though we never open a channel here.
+        realtime: { transport: ws as unknown as typeof WebSocket },
       }
     );
 
