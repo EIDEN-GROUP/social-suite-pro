@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { Company, Post, Platform, Highlight } from "@/lib/types";
 import { Media } from "@/components/Media";
 import { Heart, MessageCircle, Send, MoreHorizontal, Music2, Plus, Home, Search, PlaySquare, User, Play, Repeat2, ThumbsUp, Share2, Images, Grid3x3, Film, UserCheck } from "lucide-react";
@@ -17,33 +17,110 @@ interface Props {
   onTap?: (post: Post) => void;
 }
 
+function PhoneFrame({ children }: { children: React.ReactNode }) {
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [shine, setShine] = useState({ x: 50, y: 50 });
+
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el) return;
+    const onMove = (e: MouseEvent) => {
+      const r = el.getBoundingClientRect();
+      const x = ((e.clientX - r.left) / r.width) * 100;
+      const y = ((e.clientY - r.top) / r.height) * 100;
+      setShine({ x, y });
+    };
+    el.addEventListener("mousemove", onMove);
+    return () => el.removeEventListener("mousemove", onMove);
+  }, []);
+
+  return (
+    <div
+      ref={frameRef}
+      className="relative mx-auto w-full max-w-[340px]"
+      style={{ filter: "drop-shadow(0 30px 60px rgba(0,0,0,0.3)) drop-shadow(0 10px 20px rgba(0,0,0,0.15))" }}
+    >
+      {/* Outer bezel with realistic metallic gradient */}
+      <div
+        className="relative overflow-hidden"
+        style={{
+          borderRadius: "52px",
+          padding: "12px",
+          background: "linear-gradient(145deg, #3a3a3c, #1c1c1e 40%, #2c2c2e 60%, #3a3a3c)",
+          boxShadow: "inset 0 1px 2px rgba(255,255,255,0.15), inset 0 -1px 2px rgba(0,0,0,0.5)",
+        }}
+      >
+        {/* Inner rim highlight */}
+        <div
+          className="pointer-events-none absolute inset-0 z-30"
+          style={{
+            borderRadius: "44px",
+            padding: "2px",
+            background: "linear-gradient(160deg, rgba(255,255,255,0.12) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.3) 100%)",
+            WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+            WebkitMaskComposite: "xor",
+            maskComposite: "exclude",
+          }}
+        />
+        {/* Screen area */}
+        <div
+          className="relative overflow-hidden"
+          style={{ borderRadius: "40px", aspectRatio: "9 / 19.5" }}
+        >
+          {/* Dynamic glass glare that follows mouse */}
+          <div
+            className="pointer-events-none absolute inset-0 z-20"
+            style={{
+              background: `radial-gradient(circle at ${shine.x}% ${shine.y}%, rgba(255,255,255,0.08) 0%, transparent 60%)`,
+              transition: "background 0.15s ease-out",
+            }}
+          />
+          {/* Screen content */}
+          <div className="absolute inset-0 overflow-y-auto bg-background pb-2 text-foreground" style={{ paddingTop: "40px" }}>
+            {children}
+          </div>
+          {/* Dynamic notch / Dynamic Island */}
+          <div className="absolute left-1/2 top-3 z-20 h-[30px] w-[100px] -translate-x-1/2">
+            {/* Island pill */}
+            <div className="mx-auto h-full w-[88px] rounded-full bg-black shadow-lg">
+              <div className="flex h-full items-center justify-end gap-1 px-3">
+                <div className="h-2 w-2 rounded-full bg-orange-400/80" />
+                <div className="h-1.5 w-4 rounded-full bg-neutral-700" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Side buttons */}
+      <div className="absolute right-[-3px] top-[100px] h-10 w-[3px] rounded-r bg-gradient-to-b from-[#3a3a3c] to-[#2c2c2e] shadow-sm" />
+      <div className="absolute right-[-3px] top-[140px] h-14 w-[3px] rounded-r bg-gradient-to-b from-[#3a3a3c] to-[#2c2c2e] shadow-sm" />
+      <div className="absolute left-[-3px] top-[130px] h-12 w-[3px] rounded-l bg-gradient-to-b from-[#3a3a3c] to-[#2c2c2e] shadow-sm" />
+    </div>
+  );
+}
+
 export function PhonePreview({ platform, company, posts, highlights = [], onTap }: Props) {
   const [lightbox, setLightbox] = useState<Highlight | null>(null);
   return (
-    <div className="mx-auto w-full max-w-[340px]">
-      <div className="relative aspect-[9/19.5] overflow-hidden rounded-[42px] border-[10px] border-foreground bg-background shadow-2xl">
-        <div className="absolute left-1/2 top-2 z-20 h-5 w-28 -translate-x-1/2 rounded-full bg-foreground" />
-        <div className="absolute inset-0 overflow-y-auto pb-2 pt-8 text-foreground">
-          {platform === "instagram" && <Instagram company={company} posts={posts} highlights={highlights} onTap={onTap} onHighlight={setLightbox} />}
-          {platform === "tiktok" && <TikTok company={company} posts={posts} onTap={onTap} />}
-          {platform === "facebook" && <Facebook company={company} posts={posts} onTap={onTap} />}
-          {platform === "twitter" && <Twitter company={company} posts={posts} onTap={onTap} />}
-          {platform === "linkedin" && <LinkedIn company={company} posts={posts} onTap={onTap} />}
-        </div>
-        {lightbox && (
-          <div className="absolute inset-0 z-30 flex flex-col bg-black text-white" onClick={() => setLightbox(null)}>
-            <div className="flex items-center justify-between px-3 pb-2 pt-8 text-xs text-white/70">
-              <button onClick={() => setLightbox(null)}>✕</button>
-              <span>{lightbox.label || "Highlight"}</span>
-              <span className="w-3" />
-            </div>
-            <div className="flex flex-1 items-center justify-center p-3">
-              {lightbox.image ? <img src={lightbox.image} className="max-h-full max-w-full object-contain" /> : <span className="text-6xl">{lightbox.emoji || "○"}</span>}
-            </div>
+    <PhoneFrame>
+      {platform === "instagram" && <Instagram company={company} posts={posts} highlights={highlights} onTap={onTap} onHighlight={setLightbox} />}
+      {platform === "tiktok" && <TikTok company={company} posts={posts} onTap={onTap} />}
+      {platform === "facebook" && <Facebook company={company} posts={posts} onTap={onTap} />}
+      {platform === "twitter" && <Twitter company={company} posts={posts} onTap={onTap} />}
+      {platform === "linkedin" && <LinkedIn company={company} posts={posts} onTap={onTap} />}
+      {lightbox && (
+        <div className="absolute inset-0 z-30 flex flex-col bg-black text-white" onClick={() => setLightbox(null)}>
+          <div className="flex items-center justify-between px-3 pb-2 pt-8 text-xs text-white/70">
+            <button onClick={() => setLightbox(null)}>✕</button>
+            <span>{lightbox.label || "Highlight"}</span>
+            <span className="w-3" />
           </div>
-        )}
-      </div>
-    </div>
+          <div className="flex flex-1 items-center justify-center p-3">
+            {lightbox.image ? <img src={lightbox.image} className="max-h-full max-w-full object-contain" /> : <span className="text-6xl">{lightbox.emoji || "○"}</span>}
+          </div>
+        </div>
+      )}
+    </PhoneFrame>
   );
 }
 
@@ -336,3 +413,5 @@ function LinkedIn({ company, posts, onTap }: { company: Company; posts: Post[]; 
 function Empty() {
   return <div className="py-12 text-center text-xs text-muted-foreground">Nothing here yet.</div>;
 }
+
+
