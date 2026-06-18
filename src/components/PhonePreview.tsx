@@ -54,43 +54,18 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="mx-auto w-full max-w-[340px]">
+    <div ref={frameRef} className="relative mx-auto w-full max-w-[340px]">
       <div className="relative aspect-[9/19.5] overflow-hidden rounded-[42px] border-[10px] border-foreground bg-background shadow-2xl">
         <div className="absolute left-1/2 top-2 z-20 h-5 w-28 -translate-x-1/2 rounded-full bg-foreground" />
-        <div className="absolute inset-0 overflow-y-auto pb-2 pt-8 text-foreground">
-          {platform === "instagram" && (
-            <Instagram
-              company={company}
-              posts={posts}
-              highlights={highlights}
-              onTap={onTap}
-              onHighlight={setLightbox}
-            />
-          )}
-          {platform === "tiktok" && <TikTok company={company} posts={posts} onTap={onTap} />}
-          {platform === "facebook" && <Facebook company={company} posts={posts} onTap={onTap} />}
-          {platform === "twitter" && <Twitter company={company} posts={posts} onTap={onTap} />}
-          {platform === "linkedin" && <LinkedIn company={company} posts={posts} onTap={onTap} />}
-        </div>
-        {lightbox && (
-          <div
-            className="absolute inset-0 z-30 flex flex-col bg-black text-white"
-            onClick={() => setLightbox(null)}
-          >
-            <div className="flex items-center justify-between px-3 pb-2 pt-8 text-xs text-white/70">
-              <button onClick={() => setLightbox(null)}>✕</button>
-              <span>{lightbox.label || "Highlight"}</span>
-              <span className="w-3" />
-            </div>
-            <div className="flex flex-1 items-center justify-center p-3">
-              {lightbox.image ? (
-                <img src={lightbox.image} className="max-h-full max-w-full object-contain" />
-              ) : (
-                <span className="text-6xl">{lightbox.emoji || "○"}</span>
-              )}
-            </div>
-          </div>
-        </div>
+        <div className="absolute inset-0 overflow-y-auto pb-2 pt-8 text-foreground">{children}</div>
+        {/* Cursor-following glass shine for the 3D feel */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{
+            background: `radial-gradient(240px circle at ${shine.x}% ${shine.y}%, rgba(255,255,255,0.16), transparent 55%)`,
+          }}
+        />
       </div>
       {/* Side buttons */}
       <div className="absolute right-[-3px] top-[100px] h-10 w-[3px] rounded-r bg-gradient-to-b from-[#3a3a3c] to-[#2c2c2e] shadow-sm" />
@@ -104,20 +79,35 @@ export function PhonePreview({ platform, company, posts, highlights = [], onTap 
   const [lightbox, setLightbox] = useState<Highlight | null>(null);
   return (
     <PhoneFrame>
-      {platform === "instagram" && <Instagram company={company} posts={posts} highlights={highlights} onTap={onTap} onHighlight={setLightbox} />}
+      {platform === "instagram" && (
+        <Instagram
+          company={company}
+          posts={posts}
+          highlights={highlights}
+          onTap={onTap}
+          onHighlight={setLightbox}
+        />
+      )}
       {platform === "tiktok" && <TikTok company={company} posts={posts} onTap={onTap} />}
       {platform === "facebook" && <Facebook company={company} posts={posts} onTap={onTap} />}
       {platform === "twitter" && <Twitter company={company} posts={posts} onTap={onTap} />}
       {platform === "linkedin" && <LinkedIn company={company} posts={posts} onTap={onTap} />}
       {lightbox && (
-        <div className="absolute inset-0 z-30 flex flex-col bg-black text-white" onClick={() => setLightbox(null)}>
+        <div
+          className="absolute inset-0 z-30 flex flex-col bg-black text-white"
+          onClick={() => setLightbox(null)}
+        >
           <div className="flex items-center justify-between px-3 pb-2 pt-8 text-xs text-white/70">
             <button onClick={() => setLightbox(null)}>✕</button>
             <span>{lightbox.label || "Highlight"}</span>
             <span className="w-3" />
           </div>
           <div className="flex flex-1 items-center justify-center p-3">
-            {lightbox.image ? <img src={lightbox.image} className="max-h-full max-w-full object-contain" /> : <span className="text-6xl">{lightbox.emoji || "○"}</span>}
+            {lightbox.image ? (
+              <img src={lightbox.image} className="max-h-full max-w-full object-contain" />
+            ) : (
+              <span className="text-6xl">{lightbox.emoji || "○"}</span>
+            )}
           </div>
         </div>
       )}
@@ -632,5 +622,3 @@ function LinkedIn({
 function Empty() {
   return <div className="py-12 text-center text-xs text-muted-foreground">Nothing here yet.</div>;
 }
-
-
