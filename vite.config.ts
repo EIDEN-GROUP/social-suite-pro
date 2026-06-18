@@ -12,6 +12,9 @@ export default defineConfig({
   },
   nitro: {
     preset: "vercel",
+    // 'vercel' is a valid Nitro preset option but isn't declared in the
+    // wrapper's published types yet; it's still passed through at build time.
+    // @ts-expect-error - known gap in @lovable.dev/vite-tanstack-config types
     vercel: { entryFormat: "node" },
     output: {
       dir: ".vercel/output",

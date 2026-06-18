@@ -55,6 +55,7 @@ function CompanyAdmin() {
   const [addType, setAddType] = useState<PostType>("post");
   const [viewFilter, setViewFilter] = useState<ViewGroup>("posts");
   const [coverBusy, setCoverBusy] = useState(false);
+  const [picBusy, setPicBusy] = useState(false);
 
   const loadPosts = useCallback(async (companyId: string, pf: Platform) => {
     const { data: ps } = await supabase
@@ -194,6 +195,24 @@ function CompanyAdmin() {
       toast.error((err as Error).message);
     } finally {
       setCoverBusy(false);
+    }
+  }
+
+  async function uploadProfilePic(file: File) {
+    if (!company) return;
+    const { tooBig } = splitBySize([file]);
+    if (tooBig.length) return toast.error(`Logo is over the ${MAX_UPLOAD_MB} MB limit.`);
+    setPicBusy(true);
+    try {
+      const path = `${company.id}/logo/${Date.now()}-${safeStorageName(file.name)}`;
+      const { error } = await supabase.storage.from("media").upload(path, file);
+      if (error) throw error;
+      const url = supabase.storage.from("media").getPublicUrl(path).data.publicUrl;
+      await saveCompany({ profile_pic_url: url });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setPicBusy(false);
     }
   }
 
@@ -437,11 +456,40 @@ function CompanyAdmin() {
                   multiline
                   onSave={(v) => saveCompany({ bio: v })}
                 />
-                <ProfileField
-                  label="Profile pic URL"
-                  value={company.profile_pic_url ?? ""}
-                  onSave={(v) => saveCompany({ profile_pic_url: v })}
-                />
+                <div>
+                  <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                    Logo / profile picture
+                  </span>
+                  <div className="mt-1 flex items-center gap-2">
+                    <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-foreground/5 text-[10px] uppercase text-muted-foreground">
+                      {company.profile_pic_url ? (
+                        <img src={company.profile_pic_url} className="h-full w-full object-cover" />
+                      ) : (
+                        company.name.slice(0, 2)
+                      )}
+                    </span>
+                    <label className="cursor-pointer rounded-sm border editorial-rule px-2 py-1 text-[11px]">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => e.target.files?.[0] && uploadProfilePic(e.target.files[0])}
+                      />
+                      {picBusy ? "Uploading…" : company.profile_pic_url ? "Replace" : "Upload logo"}
+                    </label>
+                    {company.profile_pic_url && (
+                      <button
+                        onClick={() => saveCompany({ profile_pic_url: null })}
+                        className="text-[11px] text-muted-foreground hover:text-foreground"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Upload a square image — shown as the avatar across every platform mockup.
+                  </p>
+                </div>
                 <div>
                   <span className="text-xs uppercase tracking-widest text-muted-foreground">
                     Cover / banner
