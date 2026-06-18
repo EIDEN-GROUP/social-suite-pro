@@ -319,7 +319,7 @@ function ReviewPhone({
 
   return (
     <main className="flex h-[100svh] flex-col overflow-hidden bg-neutral-100 text-foreground">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-foreground/10 bg-background px-6 py-3">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-foreground/10 bg-background px-4 py-2">
         <div className="flex items-center gap-3">
           <span
             className="h-3 w-3 rounded-full"
@@ -342,7 +342,7 @@ function ReviewPhone({
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col items-center gap-3 px-4 py-4">
+      <div className="flex min-h-0 flex-1 flex-col items-center gap-2 px-4 py-2">
         {/* Platform switcher */}
         <div className="flex shrink-0 flex-wrap justify-center gap-1 rounded-full border editorial-rule bg-background p-1">
           {PLATFORMS.map((p) => {
@@ -362,7 +362,7 @@ function ReviewPhone({
             );
           })}
         </div>
-        <p className="shrink-0 text-center text-xs uppercase tracking-[0.3em] text-muted-foreground">
+        <p className="hidden shrink-0 text-center text-[10px] uppercase tracking-[0.3em] text-muted-foreground sm:block">
           Tap any post to approve or request changes
         </p>
 
@@ -371,7 +371,7 @@ function ReviewPhone({
         <div className="flex min-h-0 w-full flex-1 items-center justify-center">
           <div
             className="relative h-full overflow-hidden rounded-[44px] border-[11px] border-neutral-900 bg-background shadow-2xl"
-            style={{ aspectRatio: "9 / 19.5", maxHeight: "860px", maxWidth: "92vw" }}
+            style={{ aspectRatio: "9 / 19.5", maxHeight: "900px", maxWidth: "min(440px, 92vw)" }}
           >
             <div className="absolute left-1/2 top-2 z-30 h-6 w-32 -translate-x-1/2 rounded-full bg-neutral-900" />
 
