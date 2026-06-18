@@ -344,24 +344,27 @@ function ReviewPhone({
 
       <div className="flex flex-col items-center gap-4 px-4 py-8">
         {/* Platform switcher - dropdown on mobile, pill on desktop */}
-        <select
-          value={platform}
-          onChange={(e) => {
-            setPlatform(e.target.value as Platform);
-            setViewer(null);
-          }}
-          className="w-full max-w-[280px] rounded-full border editorial-rule bg-background px-4 py-2.5 text-center text-xs uppercase tracking-widest outline-none sm:hidden"
-        >
-          {PLATFORMS.map((p) => {
-            const n = posts.filter((x) => x.platform === p.id).length;
-            return (
-              <option key={p.id} value={p.id}>
-                {p.label}
-                {n > 0 ? ` (${n})` : ""}
-              </option>
-            );
-          })}
-        </select>
+        <div className="relative sm:hidden">
+          <select
+            value={platform}
+            onChange={(e) => {
+              setPlatform(e.target.value as Platform);
+              setViewer(null);
+            }}
+            className="appearance-none rounded-full border editorial-rule bg-background py-2.5 pl-5 pr-10 text-xs uppercase tracking-widest outline-none"
+          >
+            {PLATFORMS.map((p) => {
+              const n = posts.filter((x) => x.platform === p.id).length;
+              return (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                  {n > 0 ? ` (${n})` : ""}
+                </option>
+              );
+            })}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        </div>
         <div className="hidden flex-wrap justify-center gap-1 rounded-full border editorial-rule bg-background p-1 sm:flex">
           {PLATFORMS.map((p) => {
             const n = posts.filter((x) => x.platform === p.id).length;
