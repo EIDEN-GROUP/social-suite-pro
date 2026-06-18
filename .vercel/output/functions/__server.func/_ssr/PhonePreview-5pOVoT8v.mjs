@@ -21,42 +21,90 @@ function PhoneFrame({ children }) {
     el.addEventListener("mousemove", onMove);
     return () => el.removeEventListener("mousemove", onMove);
   }, []);
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { ref: frameRef, className: "relative mx-auto w-full max-w-[340px]", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "relative aspect-[9/19.5] overflow-hidden rounded-[42px] border-[10px] border-foreground bg-background shadow-2xl", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute left-1/2 top-2 z-20 h-5 w-28 -translate-x-1/2 rounded-full bg-foreground" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-0 overflow-y-auto pb-2 pt-8 text-foreground", children }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "div",
-        {
-          "aria-hidden": true,
-          className: "pointer-events-none absolute inset-0 z-10",
-          style: {
-            background: `radial-gradient(240px circle at ${shine.x}% ${shine.y}%, rgba(255,255,255,0.16), transparent 55%)`
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "div",
+    {
+      ref: frameRef,
+      className: "relative mx-auto w-full max-w-[340px]",
+      style: {
+        filter: "drop-shadow(0 30px 60px rgba(0,0,0,0.3)) drop-shadow(0 10px 20px rgba(0,0,0,0.15))"
+      },
+      children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "div",
+          {
+            className: "relative overflow-hidden",
+            style: {
+              borderRadius: "52px",
+              padding: "12px",
+              background: "linear-gradient(145deg, #3a3a3c, #1c1c1e 40%, #2c2c2e 60%, #3a3a3c)",
+              boxShadow: "inset 0 1px 2px rgba(255,255,255,0.15), inset 0 -1px 2px rgba(0,0,0,0.5)"
+            },
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "pointer-events-none absolute inset-0 z-30 rounded-[44px] border-2 border-white/10" }),
+              /* @__PURE__ */ jsxRuntimeExports.jsxs(
+                "div",
+                {
+                  className: "relative overflow-hidden bg-background",
+                  style: { borderRadius: "40px", aspectRatio: "9 / 19.5" },
+                  children: [
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute left-1/2 top-2 z-20 h-5 w-28 -translate-x-1/2 rounded-full bg-black" }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-0 overflow-y-auto pb-2 pt-8 text-foreground", children }),
+                    /* @__PURE__ */ jsxRuntimeExports.jsx(
+                      "div",
+                      {
+                        "aria-hidden": true,
+                        className: "pointer-events-none absolute inset-0 z-10",
+                        style: {
+                          background: `radial-gradient(240px circle at ${shine.x}% ${shine.y}%, rgba(255,255,255,0.18), transparent 55%)`
+                        }
+                      }
+                    )
+                  ]
+                }
+              )
+            ]
           }
-        }
-      )
-    ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute right-[-3px] top-[100px] h-10 w-[3px] rounded-r bg-gradient-to-b from-[#3a3a3c] to-[#2c2c2e] shadow-sm" }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute right-[-3px] top-[140px] h-14 w-[3px] rounded-r bg-gradient-to-b from-[#3a3a3c] to-[#2c2c2e] shadow-sm" }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute left-[-3px] top-[130px] h-12 w-[3px] rounded-l bg-gradient-to-b from-[#3a3a3c] to-[#2c2c2e] shadow-sm" })
-  ] });
+        ),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute right-[-3px] top-[100px] h-10 w-[3px] rounded-r bg-gradient-to-b from-[#3a3a3c] to-[#2c2c2e] shadow-sm" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute right-[-3px] top-[140px] h-14 w-[3px] rounded-r bg-gradient-to-b from-[#3a3a3c] to-[#2c2c2e] shadow-sm" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute left-[-3px] top-[130px] h-12 w-[3px] rounded-l bg-gradient-to-b from-[#3a3a3c] to-[#2c2c2e] shadow-sm" })
+      ]
+    }
+  );
 }
 function PhonePreview({ platform, company, posts, highlights = [], onTap }) {
   const [lightbox, setLightbox] = reactExports.useState(null);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(PhoneFrame, { children: [
-    platform === "instagram" && /* @__PURE__ */ jsxRuntimeExports.jsx(Instagram, { company, posts, highlights, onTap, onHighlight: setLightbox }),
+    platform === "instagram" && /* @__PURE__ */ jsxRuntimeExports.jsx(
+      Instagram,
+      {
+        company,
+        posts,
+        highlights,
+        onTap,
+        onHighlight: setLightbox
+      }
+    ),
     platform === "tiktok" && /* @__PURE__ */ jsxRuntimeExports.jsx(TikTok, { company, posts, onTap }),
     platform === "facebook" && /* @__PURE__ */ jsxRuntimeExports.jsx(Facebook, { company, posts, onTap }),
     platform === "twitter" && /* @__PURE__ */ jsxRuntimeExports.jsx(Twitter, { company, posts, onTap }),
     platform === "linkedin" && /* @__PURE__ */ jsxRuntimeExports.jsx(LinkedIn, { company, posts, onTap }),
-    lightbox && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "absolute inset-0 z-30 flex flex-col bg-black text-white", onClick: () => setLightbox(null), children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between px-3 pb-2 pt-8 text-xs text-white/70", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => setLightbox(null), children: "✕" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: lightbox.label || "Highlight" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "w-3" })
-      ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-1 items-center justify-center p-3", children: lightbox.image ? /* @__PURE__ */ jsxRuntimeExports.jsx("img", { src: lightbox.image, className: "max-h-full max-w-full object-contain" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-6xl", children: lightbox.emoji || "○" }) })
-    ] })
+    lightbox && /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "div",
+      {
+        className: "absolute inset-0 z-30 flex flex-col bg-black text-white",
+        onClick: () => setLightbox(null),
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between px-3 pb-2 pt-8 text-xs text-white/70", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("button", { onClick: () => setLightbox(null), children: "✕" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { children: lightbox.label || "Highlight" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "w-3" })
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-1 items-center justify-center p-3", children: lightbox.image ? /* @__PURE__ */ jsxRuntimeExports.jsx("img", { src: lightbox.image, className: "max-h-full max-w-full object-contain" }) : /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-6xl", children: lightbox.emoji || "○" }) })
+        ]
+      }
+    )
   ] });
 }
 function Avatar({ company, size = 32 }) {

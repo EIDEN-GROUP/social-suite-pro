@@ -82,7 +82,7 @@ function getResponse() {
 }
 var HEADERS = { TSS_SHELL: "X-TSS_SHELL" };
 async function getStartManifest(matchedRoutes) {
-  const { tsrStartManifest } = await import("../_tanstack-start-manifest_v-CO9juvUk.mjs");
+  const { tsrStartManifest } = await import("../_tanstack-start-manifest_v-DxPlwFpj.mjs");
   const startManifest = tsrStartManifest();
   const rootRoute = startManifest.routes[rootRouteId] = startManifest.routes[rootRouteId] || {};
   rootRoute.assets = rootRoute.assets || [];
@@ -112,23 +112,23 @@ async function getStartManifest(matchedRoutes) {
 const manifest = {
   "3d47a6cc2b9dbeba8f759d2be5af4b50dfe3841787c3e1c7a595383ba82d23c7": {
     functionName: "signUpStudioAdmin_createServerFn_handler",
-    importer: () => import("./admin.functions-mZrz0sh1.mjs")
-  },
-  "f1ced4b90724720222b1bcd5233d4c056681bb239d76a086d70af4fe699f396e": {
-    functionName: "getCompanyBranding_createServerFn_handler",
-    importer: () => import("./client.functions-1NMMRtVH.mjs")
-  },
-  "c66687f3fd5374f4965da097301eaf573c907bb3b0850b9956e372584a0401f1": {
-    functionName: "getClientWorkspace_createServerFn_handler",
-    importer: () => import("./client.functions-1NMMRtVH.mjs")
-  },
-  "005776df560c987ea9fd0c4388b1a630c89c2fca77a413e62c78347894d0c972": {
-    functionName: "clientDecide_createServerFn_handler",
-    importer: () => import("./client.functions-1NMMRtVH.mjs")
+    importer: () => import("./admin.functions-DU6w9zE6.mjs")
   },
   "1ac20e83585a55e943670fa4670b07889b610801a7a21f28dc367c19f92e50fd": {
     functionName: "submitContact_createServerFn_handler",
-    importer: () => import("./contact.functions-DQQHmRUq.mjs")
+    importer: () => import("./contact.functions-CmhhggJc.mjs")
+  },
+  "f1ced4b90724720222b1bcd5233d4c056681bb239d76a086d70af4fe699f396e": {
+    functionName: "getCompanyBranding_createServerFn_handler",
+    importer: () => import("./client.functions-mfu_wfse.mjs")
+  },
+  "c66687f3fd5374f4965da097301eaf573c907bb3b0850b9956e372584a0401f1": {
+    functionName: "getClientWorkspace_createServerFn_handler",
+    importer: () => import("./client.functions-mfu_wfse.mjs")
+  },
+  "005776df560c987ea9fd0c4388b1a630c89c2fca77a413e62c78347894d0c972": {
+    functionName: "clientDecide_createServerFn_handler",
+    importer: () => import("./client.functions-mfu_wfse.mjs")
   }
 };
 async function getServerFnById(id, access) {
@@ -887,7 +887,7 @@ var baseManifestPromise;
 var cachedFinalManifestPromise;
 async function loadEntries() {
   const [routerEntry, startEntry, pluginAdapters] = await Promise.all([
-    import("./router-1J7SWdFx.mjs").then((n) => n.r),
+    import("./router-8TfFJ86_.mjs").then((n) => n.r),
     import("./start-DUVTb-Gy.mjs"),
     import("../__23tanstack-start-plugin-adapters-Cwee5PKy.mjs")
   ]);

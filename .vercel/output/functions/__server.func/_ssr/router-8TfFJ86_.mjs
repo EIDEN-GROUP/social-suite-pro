@@ -26,7 +26,7 @@ import "../_libs/iceberg-js.mjs";
 import "../_libs/supabase__auth-js.mjs";
 import "tslib";
 import "../_libs/supabase__functions-js.mjs";
-const appCss = "/assets/styles-C3jxfRwa.css";
+const appCss = "/assets/styles-2Vs8Pl0S.css";
 function reportLovableError(error, context = {}) {
   if (typeof window === "undefined") return;
   window.__lovableEvents?.captureException?.(
@@ -160,7 +160,7 @@ function RootComponent() {
     /* @__PURE__ */ jsxRuntimeExports.jsx(Toaster, { position: "top-center" })
   ] });
 }
-const $$splitComponentImporter$6 = () => import("./auth-CIx6Kl3T.mjs");
+const $$splitComponentImporter$6 = () => import("./auth-l8EVzhby.mjs");
 const Route$6 = createFileRoute("/auth")({
   head: () => ({
     meta: [{
@@ -208,7 +208,7 @@ const Route$5 = createFileRoute("/_authenticated")({
   },
   component: lazyRouteComponent($$splitComponentImporter$5, "component")
 });
-const $$splitComponentImporter$4 = () => import("./index-DO3S__41.mjs");
+const $$splitComponentImporter$4 = () => import("./index-B1fnMCqq.mjs");
 const Route$4 = createFileRoute("/")({
   head: () => ({
     meta: [{
@@ -226,7 +226,7 @@ const Route$4 = createFileRoute("/")({
   }),
   component: lazyRouteComponent($$splitComponentImporter$4, "component")
 });
-const $$splitComponentImporter$3 = () => import("./c._slug-B3tFJJGd.mjs");
+const $$splitComponentImporter$3 = () => import("./c._slug-BheyFvXg.mjs");
 const Route$3 = createFileRoute("/c/$slug")({
   ssr: false,
   head: () => ({
@@ -244,7 +244,7 @@ const $$splitComponentImporter$1 = () => import("./admin.index-VcCPpD40.mjs");
 const Route$1 = createFileRoute("/_authenticated/admin/")({
   component: lazyRouteComponent($$splitComponentImporter$1, "component")
 });
-const $$splitComponentImporter = () => import("./admin.companies._slug-C0eGX30-.mjs");
+const $$splitComponentImporter = () => import("./admin.companies._slug-C-xzss9J.mjs");
 const Route = createFileRoute("/_authenticated/admin/companies/$slug")({
   component: lazyRouteComponent($$splitComponentImporter, "component")
 });

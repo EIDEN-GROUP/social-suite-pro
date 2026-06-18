@@ -3,11 +3,11 @@ import { d as useNavigate, L as Link } from "../_libs/tanstack__react-router.mjs
 import { s as supabase } from "./client-D2eKXXFb.mjs";
 import { t as toast } from "../_libs/sonner.mjs";
 import { P as PLATFORMS, a as POST_TYPES, M as Media } from "./types-CQzXJOzH.mjs";
-import { P as PhonePreview } from "./PhonePreview-B043DJOt.mjs";
+import { P as PhonePreview } from "./PhonePreview-5pOVoT8v.mjs";
 import { c as useSensors, d as useSensor, D as DndContext, e as closestCenter, P as PointerSensor } from "../_libs/dnd-kit__core.mjs";
 import { S as SortableContext, r as rectSortingStrategy, a as arrayMove, u as useSortable } from "../_libs/dnd-kit__sortable.mjs";
 import { C as CSS } from "../_libs/dnd-kit__utilities.mjs";
-import { a as Route } from "./router-1J7SWdFx.mjs";
+import { a as Route } from "./router-8TfFJ86_.mjs";
 import { h as Play, I as Images, n as Trash2, X } from "../_libs/lucide-react.mjs";
 import "../_libs/tanstack__router-core.mjs";
 import "../_libs/tanstack__history.mjs";

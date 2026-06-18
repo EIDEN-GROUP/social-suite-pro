@@ -54,18 +54,46 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div ref={frameRef} className="relative mx-auto w-full max-w-[340px]">
-      <div className="relative aspect-[9/19.5] overflow-hidden rounded-[42px] border-[10px] border-foreground bg-background shadow-2xl">
-        <div className="absolute left-1/2 top-2 z-20 h-5 w-28 -translate-x-1/2 rounded-full bg-foreground" />
-        <div className="absolute inset-0 overflow-y-auto pb-2 pt-8 text-foreground">{children}</div>
-        {/* Cursor-following glass shine for the 3D feel */}
+    <div
+      ref={frameRef}
+      className="relative mx-auto w-full max-w-[340px]"
+      style={{
+        filter:
+          "drop-shadow(0 30px 60px rgba(0,0,0,0.3)) drop-shadow(0 10px 20px rgba(0,0,0,0.15))",
+      }}
+    >
+      {/* Outer bezel with a realistic metallic gradient */}
+      <div
+        className="relative overflow-hidden"
+        style={{
+          borderRadius: "52px",
+          padding: "12px",
+          background: "linear-gradient(145deg, #3a3a3c, #1c1c1e 40%, #2c2c2e 60%, #3a3a3c)",
+          boxShadow: "inset 0 1px 2px rgba(255,255,255,0.15), inset 0 -1px 2px rgba(0,0,0,0.5)",
+        }}
+      >
+        {/* Inner rim highlight */}
+        <div className="pointer-events-none absolute inset-0 z-30 rounded-[44px] border-2 border-white/10" />
+        {/* Screen area */}
         <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-10"
-          style={{
-            background: `radial-gradient(240px circle at ${shine.x}% ${shine.y}%, rgba(255,255,255,0.16), transparent 55%)`,
-          }}
-        />
+          className="relative overflow-hidden bg-background"
+          style={{ borderRadius: "40px", aspectRatio: "9 / 19.5" }}
+        >
+          {/* Notch */}
+          <div className="absolute left-1/2 top-2 z-20 h-5 w-28 -translate-x-1/2 rounded-full bg-black" />
+          {/* Scrollable screen content */}
+          <div className="absolute inset-0 overflow-y-auto pb-2 pt-8 text-foreground">
+            {children}
+          </div>
+          {/* Dynamic glass glare that follows the cursor */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-10"
+            style={{
+              background: `radial-gradient(240px circle at ${shine.x}% ${shine.y}%, rgba(255,255,255,0.18), transparent 55%)`,
+            }}
+          />
+        </div>
       </div>
       {/* Side buttons */}
       <div className="absolute right-[-3px] top-[100px] h-10 w-[3px] rounded-r bg-gradient-to-b from-[#3a3a3c] to-[#2c2c2e] shadow-sm" />

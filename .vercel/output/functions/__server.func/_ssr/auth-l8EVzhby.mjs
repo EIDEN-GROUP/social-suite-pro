@@ -1,8 +1,8 @@
 import { r as reactExports, j as jsxRuntimeExports } from "../_libs/react.mjs";
 import { d as useNavigate, L as Link } from "../_libs/tanstack__react-router.mjs";
-import { u as useServerFn, c as createSsrRpc } from "./createSsrRpc-BWDJsalq.mjs";
+import { u as useServerFn, c as createSsrRpc } from "./createSsrRpc-Bz2nbQDp.mjs";
 import { s as supabase } from "./client-D2eKXXFb.mjs";
-import { c as createServerFn } from "./server-DDgu703A.mjs";
+import { c as createServerFn } from "./server-RS57rG6Y.mjs";
 import { A as AuthAura } from "./AuthAura-Dmd388lH.mjs";
 import { t as toast } from "../_libs/sonner.mjs";
 import "../_libs/seroval.mjs";

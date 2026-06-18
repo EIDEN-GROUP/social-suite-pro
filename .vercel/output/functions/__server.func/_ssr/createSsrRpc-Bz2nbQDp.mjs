@@ -1,7 +1,7 @@
 import { r as reactExports } from "../_libs/react.mjs";
 import { u as useRouter } from "../_libs/tanstack__react-router.mjs";
 import { l as isRedirect } from "../_libs/tanstack__router-core.mjs";
-import { T as TSS_SERVER_FUNCTION, g as getServerFnById } from "./server-DDgu703A.mjs";
+import { T as TSS_SERVER_FUNCTION, g as getServerFnById } from "./server-RS57rG6Y.mjs";
 function useServerFn(serverFn) {
   const router = useRouter();
   return reactExports.useCallback(async (...args) => {
