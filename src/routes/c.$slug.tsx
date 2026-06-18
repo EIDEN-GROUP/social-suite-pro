@@ -318,8 +318,8 @@ function ReviewPhone({
   const viewerIdx = viewer ? viewer.list.findIndex((p) => p.id === viewer.id) : -1;
 
   return (
-    <main className="min-h-screen bg-neutral-100 text-foreground">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-foreground/10 bg-background px-6 py-3">
+    <main className="flex h-[100svh] flex-col overflow-hidden bg-neutral-100 text-foreground">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-foreground/10 bg-background px-6 py-3">
         <div className="flex items-center gap-3">
           <span
             className="h-3 w-3 rounded-full"
@@ -342,9 +342,9 @@ function ReviewPhone({
         </div>
       </header>
 
-      <div className="flex flex-col items-center gap-4 px-4 py-8">
+      <div className="flex min-h-0 flex-1 flex-col items-center gap-3 px-4 py-4">
         {/* Platform switcher */}
-        <div className="flex flex-wrap justify-center gap-1 rounded-full border editorial-rule bg-background p-1">
+        <div className="flex shrink-0 flex-wrap justify-center gap-1 rounded-full border editorial-rule bg-background p-1">
           {PLATFORMS.map((p) => {
             const n = posts.filter((x) => x.platform === p.id).length;
             return (
@@ -362,48 +362,52 @@ function ReviewPhone({
             );
           })}
         </div>
-        <p className="text-center text-xs uppercase tracking-[0.3em] text-muted-foreground">
+        <p className="shrink-0 text-center text-xs uppercase tracking-[0.3em] text-muted-foreground">
           Tap any post to approve or request changes
         </p>
 
-        {/* Phone - sized by the smaller of available width / height so it
-            never crops on short laptop screens (e.g. 768px-tall Windows). */}
-        <div
-          className="relative mx-auto overflow-hidden rounded-[44px] border-[11px] border-neutral-900 bg-background shadow-2xl"
-          style={{
-            aspectRatio: "9 / 19.5",
-            width: "min(390px, 92vw, calc((100svh - 200px) * 9 / 19.5))",
-          }}
-        >
-          <div className="absolute left-1/2 top-2 z-30 h-6 w-32 -translate-x-1/2 rounded-full bg-neutral-900" />
+        {/* Phone slot - fills the remaining height so the device fits any
+            screen (ThinkPads / short laptops) with no crop and no page scroll. */}
+        <div className="flex min-h-0 w-full flex-1 items-center justify-center">
+          <div
+            className="relative h-full overflow-hidden rounded-[44px] border-[11px] border-neutral-900 bg-background shadow-2xl"
+            style={{ aspectRatio: "9 / 19.5", maxHeight: "860px", maxWidth: "92vw" }}
+          >
+            <div className="absolute left-1/2 top-2 z-30 h-6 w-32 -translate-x-1/2 rounded-full bg-neutral-900" />
 
-          {platform === "instagram" ? (
-            <Instagram
-              company={company}
-              posts={platformPosts}
-              highlights={highlights}
-              igTab={igTab}
-              setIgTab={setIgTab}
-              onOpen={open}
-            />
-          ) : (
-            <FeedPhone platform={platform} company={company} posts={platformPosts} onOpen={open} />
-          )}
+            {platform === "instagram" ? (
+              <Instagram
+                company={company}
+                posts={platformPosts}
+                highlights={highlights}
+                igTab={igTab}
+                setIgTab={setIgTab}
+                onOpen={open}
+              />
+            ) : (
+              <FeedPhone
+                platform={platform}
+                company={company}
+                posts={platformPosts}
+                onOpen={open}
+              />
+            )}
 
-          {viewer && viewerIdx >= 0 && (
-            <PostViewer
-              post={viewer.list[viewerIdx]}
-              index={viewerIdx}
-              total={viewer.list.length}
-              onClose={() => setViewer(null)}
-              onNav={(dir) => {
-                const next = viewerIdx + dir;
-                if (next < 0 || next >= viewer.list.length) setViewer(null);
-                else setViewer({ list: viewer.list, id: viewer.list[next].id });
-              }}
-              onDecide={onDecide}
-            />
-          )}
+            {viewer && viewerIdx >= 0 && (
+              <PostViewer
+                post={viewer.list[viewerIdx]}
+                index={viewerIdx}
+                total={viewer.list.length}
+                onClose={() => setViewer(null)}
+                onNav={(dir) => {
+                  const next = viewerIdx + dir;
+                  if (next < 0 || next >= viewer.list.length) setViewer(null);
+                  else setViewer({ list: viewer.list, id: viewer.list[next].id });
+                }}
+                onDecide={onDecide}
+              />
+            )}
+          </div>
         </div>
       </div>
     </main>
