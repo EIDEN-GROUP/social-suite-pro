@@ -280,6 +280,16 @@
   -webkit-backdrop-filter: blur(14px);
 }
 
+/* Hide the scrollbar inside the phone mockups. macOS uses overlay scrollbars,
+   but Windows/Linux render a visible track that breaks the device illusion. */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Edge */
+}
+
 /* ---- Auth: living gradient aurora ---- */
 @keyframes auroraDrift {
   0%,

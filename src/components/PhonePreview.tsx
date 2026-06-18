@@ -57,7 +57,10 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
     <div
       ref={frameRef}
       className="relative mx-auto w-full max-w-[340px]"
-      style={{ filter: "drop-shadow(0 30px 60px rgba(0,0,0,0.3)) drop-shadow(0 10px 20px rgba(0,0,0,0.15))" }}
+      style={{
+        filter:
+          "drop-shadow(0 30px 60px rgba(0,0,0,0.3)) drop-shadow(0 10px 20px rgba(0,0,0,0.15))",
+      }}
     >
       {/* Outer bezel with realistic metallic gradient */}
       <div
@@ -77,7 +80,10 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
           style={{ borderRadius: "40px", aspectRatio: 9 / 19.5 }}
         >
           {/* Screen content */}
-          <div className="absolute inset-0 overflow-y-auto bg-background pb-2 text-foreground" style={{ paddingTop: "40px" }}>
+          <div
+            className="no-scrollbar absolute inset-0 overflow-y-auto bg-background pb-2 text-foreground"
+            style={{ paddingTop: "40px" }}
+          >
             {children}
           </div>
           {/* Dynamic glass glare that follows mouse */}
@@ -111,20 +117,35 @@ export function PhonePreview({ platform, company, posts, highlights = [], onTap 
   const [lightbox, setLightbox] = useState<Highlight | null>(null);
   return (
     <PhoneFrame>
-      {platform === "instagram" && <Instagram company={company} posts={posts} highlights={highlights} onTap={onTap} onHighlight={setLightbox} />}
+      {platform === "instagram" && (
+        <Instagram
+          company={company}
+          posts={posts}
+          highlights={highlights}
+          onTap={onTap}
+          onHighlight={setLightbox}
+        />
+      )}
       {platform === "tiktok" && <TikTok company={company} posts={posts} onTap={onTap} />}
       {platform === "facebook" && <Facebook company={company} posts={posts} onTap={onTap} />}
       {platform === "twitter" && <Twitter company={company} posts={posts} onTap={onTap} />}
       {platform === "linkedin" && <LinkedIn company={company} posts={posts} onTap={onTap} />}
       {lightbox && (
-        <div className="absolute inset-0 z-30 flex flex-col bg-black text-white" onClick={() => setLightbox(null)}>
+        <div
+          className="absolute inset-0 z-30 flex flex-col bg-black text-white"
+          onClick={() => setLightbox(null)}
+        >
           <div className="flex items-center justify-between px-3 pb-2 pt-8 text-xs text-white/70">
             <button onClick={() => setLightbox(null)}>✕</button>
             <span>{lightbox.label || "Highlight"}</span>
             <span className="w-3" />
           </div>
           <div className="flex flex-1 items-center justify-center p-3">
-            {lightbox.image ? <img src={lightbox.image} className="max-h-full max-w-full object-contain" /> : <span className="text-6xl">{lightbox.emoji || "○"}</span>}
+            {lightbox.image ? (
+              <img src={lightbox.image} className="max-h-full max-w-full object-contain" />
+            ) : (
+              <span className="text-6xl">{lightbox.emoji || "○"}</span>
+            )}
           </div>
         </div>
       )}
@@ -639,5 +660,3 @@ function LinkedIn({
 function Empty() {
   return <div className="py-12 text-center text-xs text-muted-foreground">Nothing here yet.</div>;
 }
-
-

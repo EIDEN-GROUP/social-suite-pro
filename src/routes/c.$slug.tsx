@@ -366,10 +366,14 @@ function ReviewPhone({
           Tap any post to approve or request changes
         </p>
 
-        {/* Phone */}
+        {/* Phone - sized by the smaller of available width / height so it
+            never crops on short laptop screens (e.g. 768px-tall Windows). */}
         <div
-          className="relative w-full max-w-[390px] overflow-hidden rounded-[44px] border-[11px] border-neutral-900 bg-background shadow-2xl"
-          style={{ aspectRatio: "9 / 19.5" }}
+          className="relative mx-auto overflow-hidden rounded-[44px] border-[11px] border-neutral-900 bg-background shadow-2xl"
+          style={{
+            aspectRatio: "9 / 19.5",
+            width: "min(390px, 92vw, calc((100svh - 200px) * 9 / 19.5))",
+          }}
         >
           <div className="absolute left-1/2 top-2 z-30 h-6 w-32 -translate-x-1/2 rounded-full bg-neutral-900" />
 
@@ -454,7 +458,7 @@ function Instagram({
         </div>
       </div>
 
-      <div className="absolute inset-x-0 bottom-12 top-[68px] overflow-y-auto">
+      <div className="no-scrollbar absolute inset-x-0 bottom-12 top-[68px] overflow-y-auto">
         <Profile
           company={company}
           postCount={gridPosts.length}
@@ -609,7 +613,7 @@ function FeedPhone({
         <span className="text-xs text-muted-foreground">@{handle}</span>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 top-[64px] overflow-y-auto bg-neutral-50">
+      <div className="no-scrollbar absolute inset-x-0 bottom-0 top-[64px] overflow-y-auto bg-neutral-50">
         {/* ---- Business profile / page header ---- */}
         {platform === "facebook" && (
           <div className="bg-background">
@@ -921,7 +925,7 @@ function Highlights({
   onPick: (h: Highlight) => void;
 }) {
   return (
-    <div className="mt-4 flex gap-4 overflow-x-auto px-4">
+    <div className="no-scrollbar mt-4 flex gap-4 overflow-x-auto px-4">
       {highlights.map((h) => (
         <button
           key={h.id}
@@ -1069,7 +1073,9 @@ function PostViewer({
       </div>
 
       {post.caption && (
-        <p className="max-h-20 overflow-y-auto px-4 py-2 text-xs text-white/80">{post.caption}</p>
+        <p className="no-scrollbar max-h-20 overflow-y-auto px-4 py-2 text-xs text-white/80">
+          {post.caption}
+        </p>
       )}
 
       <div className="border-t border-white/10 bg-black/95 p-3">
