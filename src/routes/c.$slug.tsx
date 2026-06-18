@@ -318,8 +318,8 @@ function ReviewPhone({
   const viewerIdx = viewer ? viewer.list.findIndex((p) => p.id === viewer.id) : -1;
 
   return (
-    <main className="flex min-h-screen flex-col bg-neutral-100 text-foreground">
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-foreground/10 bg-background px-4 py-2">
+    <main className="min-h-screen bg-neutral-100 text-foreground">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-foreground/10 bg-background px-6 py-3">
         <div className="flex items-center gap-3">
           <span
             className="h-3 w-3 rounded-full"
@@ -342,9 +342,27 @@ function ReviewPhone({
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col items-center gap-3 px-4 py-6">
-        {/* Platform switcher */}
-        <div className="flex shrink-0 flex-wrap justify-center gap-1 rounded-full border editorial-rule bg-background p-1">
+      <div className="flex flex-col items-center gap-4 px-4 py-8">
+        {/* Platform switcher - dropdown on mobile, pill on desktop */}
+        <select
+          value={platform}
+          onChange={(e) => {
+            setPlatform(e.target.value as Platform);
+            setViewer(null);
+          }}
+          className="w-full max-w-[280px] rounded-full border editorial-rule bg-background px-4 py-2.5 text-center text-xs uppercase tracking-widest outline-none sm:hidden"
+        >
+          {PLATFORMS.map((p) => {
+            const n = posts.filter((x) => x.platform === p.id).length;
+            return (
+              <option key={p.id} value={p.id}>
+                {p.label}
+                {n > 0 ? ` (${n})` : ""}
+              </option>
+            );
+          })}
+        </select>
+        <div className="hidden flex-wrap justify-center gap-1 rounded-full border editorial-rule bg-background p-1 sm:flex">
           {PLATFORMS.map((p) => {
             const n = posts.filter((x) => x.platform === p.id).length;
             return (
@@ -362,15 +380,14 @@ function ReviewPhone({
             );
           })}
         </div>
-        <p className="hidden shrink-0 text-center text-[10px] uppercase tracking-[0.3em] text-muted-foreground sm:block">
+        <p className="text-center text-xs uppercase tracking-[0.3em] text-muted-foreground">
           Tap any post to approve or request changes
         </p>
 
-        {/* Phone - a fixed, stable size. The page scrolls if the screen is
-            short, and browser zoom scales it uniformly instead of reflowing. */}
+        {/* Phone */}
         <div
-          className="relative mx-auto shrink-0 overflow-hidden rounded-[44px] border-[11px] border-neutral-900 bg-background shadow-2xl"
-          style={{ aspectRatio: "9 / 19.5", width: "min(390px, 92vw)" }}
+          className="relative w-full max-w-[390px] overflow-hidden rounded-[44px] border-[11px] border-neutral-900 bg-background shadow-2xl"
+          style={{ aspectRatio: "9 / 19.5" }}
         >
           <div className="absolute left-1/2 top-2 z-30 h-6 w-32 -translate-x-1/2 rounded-full bg-neutral-900" />
 
