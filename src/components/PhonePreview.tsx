@@ -78,22 +78,12 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
         >
           {/* Dynamic glass glare that follows mouse */}
           <div
-            className="absolute inset-0 z-30 flex flex-col bg-black text-white"
-            onClick={() => setLightbox(null)}
-          >
-            <div className="flex items-center justify-between px-3 pb-2 pt-8 text-xs text-white/70">
-              <button onClick={() => setLightbox(null)}>✕</button>
-              <span>{lightbox.label || "Highlight"}</span>
-              <span className="w-3" />
-            </div>
-            <div className="flex flex-1 items-center justify-center p-3">
-              {lightbox.image ? (
-                <img src={lightbox.image} className="max-h-full max-w-full object-contain" />
-              ) : (
-                <span className="text-6xl">{lightbox.emoji || "○"}</span>
-              )}
-            </div>
-          </div>
+            className="pointer-events-none absolute inset-0 z-20"
+            style={{
+              background: `radial-gradient(circle at ${shine.x}% ${shine.y}%, rgba(255,255,255,0.08) 0%, transparent 60%)`,
+              transition: "background 0.15s ease-out",
+            }}
+          />
         </div>
       </div>
       {/* Side buttons */}
