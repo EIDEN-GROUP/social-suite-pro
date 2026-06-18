@@ -76,6 +76,10 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
           className="relative overflow-hidden"
           style={{ borderRadius: "40px", aspectRatio: 9 / 19.5 }}
         >
+          {/* Screen content */}
+          <div className="absolute inset-0 overflow-y-auto bg-background pb-2 text-foreground" style={{ paddingTop: "40px" }}>
+            {children}
+          </div>
           {/* Dynamic glass glare that follows mouse */}
           <div
             className="pointer-events-none absolute inset-0 z-20"
@@ -84,6 +88,15 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
               transition: "background 0.15s ease-out",
             }}
           />
+          {/* Dynamic notch / Dynamic Island */}
+          <div className="absolute left-1/2 top-3 z-20 h-[30px] w-[100px] -translate-x-1/2">
+            <div className="mx-auto h-full w-[88px] rounded-full bg-black shadow-lg">
+              <div className="flex h-full items-center justify-end gap-1 px-3">
+                <div className="h-2 w-2 rounded-full bg-orange-400/80" />
+                <div className="h-1.5 w-4 rounded-full bg-neutral-700" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       {/* Side buttons */}
