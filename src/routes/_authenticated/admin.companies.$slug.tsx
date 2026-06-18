@@ -506,7 +506,7 @@ function CompanyAdmin() {
                     )}
                   </div>
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    Upload a square image — shown as the avatar across every platform mockup.
+                    Upload a square image - shown as the avatar across every platform mockup.
                   </p>
                 </div>
                 <div>

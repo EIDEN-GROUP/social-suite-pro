@@ -181,7 +181,7 @@ function AuthPage() {
         </div>
 
         <p className="mt-6 text-center text-[11px] text-muted-foreground">
-          © Atelier Studio — where the work is shown, and then approved.
+          © Atelier Studio - where the work is shown, and then approved.
         </p>
       </div>
     </AuthAura>

@@ -143,7 +143,7 @@ function ClientRoom() {
 
     return (
       <main className="grid min-h-screen grid-cols-1 bg-background text-foreground lg:grid-cols-[1.05fr_1fr]">
-        {/* LEFT — branded aurora showcase */}
+        {/* LEFT - branded aurora showcase */}
         <section className="relative hidden flex-col justify-between overflow-hidden border-r editorial-rule p-12 lg:flex xl:p-16">
           <AuroraLayer accent={accent} />
 
@@ -166,7 +166,7 @@ function ClientRoom() {
               <span className="text-social-gradient">ready for review.</span>
             </h1>
             <p className="mt-5 max-w-md text-base text-muted-foreground">
-              Swipe through every post, reel and story in true-to-life mockups — then approve or
+              Swipe through every post, reel and story in true-to-life mockups - then approve or
               request changes in a single tap.
             </p>
 
@@ -198,7 +198,7 @@ function ClientRoom() {
           </p>
         </section>
 
-        {/* RIGHT — sign-in form */}
+        {/* RIGHT - sign-in form */}
         <section className="relative flex items-center justify-center overflow-hidden p-6 sm:p-10">
           {/* Mobile-only aurora wash since the left panel is hidden */}
           <div className="absolute inset-0 -z-10 opacity-70 lg:hidden">
@@ -265,7 +265,7 @@ function ClientRoom() {
             </form>
 
             <p className="mt-8 text-[11px] text-muted-foreground">
-              Reviewed in seconds — no account needed.
+              Reviewed in seconds - no account needed.
             </p>
           </div>
         </section>

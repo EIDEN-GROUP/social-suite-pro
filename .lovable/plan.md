@@ -4,18 +4,18 @@ A fresh rebuild of the EIDEN PHP tool on Lovable Cloud (React + Postgres + Auth 
 
 ## Design direction
 
-Paper & Ink editorial — off-white `#f5f3ee` canvas, deep ink `#0d0d0d`, soft cream surfaces, generous whitespace, serif display (Instrument Serif / DM Serif) + clean sans body (Inter). Subtle dividers, no neon, refined hover micro-interactions. The simulated phone frames sit on the paper canvas like specimens in a magazine spread.
+Paper & Ink editorial - off-white `#f5f3ee` canvas, deep ink `#0d0d0d`, soft cream surfaces, generous whitespace, serif display (Instrument Serif / DM Serif) + clean sans body (Inter). Subtle dividers, no neon, refined hover micro-interactions. The simulated phone frames sit on the paper canvas like specimens in a magazine spread.
 
 ## Roles
 
-- **Superadmin** — single account (seeded). Manages companies, uploads content per platform, reviews approval status.
-- **Client** — one account per company. Sees only their own company's content, can approve / reject with a comment.
+- **Superadmin** - single account (seeded). Manages companies, uploads content per platform, reviews approval status.
+- **Client** - one account per company. Sees only their own company's content, can approve / reject with a comment.
 
 ## Core features
 
 ### Superadmin dashboard
 
-- Companies list (create / edit / delete) — each gets a slug, brand name, accent color, logo, client email/password.
+- Companies list (create / edit / delete) - each gets a slug, brand name, accent color, logo, client email/password.
 - Per-company workspace with tabs per platform (Instagram, TikTok, Facebook, X, LinkedIn).
 - Upload posts: image/video, caption, scheduled date, post type (feed post, reel, story, carousel).
 - Drag-to-reorder grid; live preview in the platform mockup.
