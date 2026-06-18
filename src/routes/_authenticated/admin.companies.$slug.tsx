@@ -25,7 +25,10 @@ export const Route = createFileRoute("/_authenticated/admin/companies/$slug")({
 });
 
 function normalizePost(row: Record<string, unknown>): Post {
-  return { ...(row as unknown as Post), extra_media: Array.isArray(row.extra_media) ? (row.extra_media as string[]) : [] };
+  return {
+    ...(row as unknown as Post),
+    extra_media: Array.isArray(row.extra_media) ? (row.extra_media as string[]) : [],
+  };
 }
 
 type ViewGroup = "posts" | "reels" | "stories";
@@ -54,34 +57,54 @@ function CompanyAdmin() {
   const [coverBusy, setCoverBusy] = useState(false);
 
   const loadPosts = useCallback(async (companyId: string, pf: Platform) => {
-    const { data: ps } = await supabase.from("posts").select("*").eq("company_id", companyId).eq("platform", pf).order("position");
+    const { data: ps } = await supabase
+      .from("posts")
+      .select("*")
+      .eq("company_id", companyId)
+      .eq("platform", pf)
+      .order("position");
     setPosts((ps ?? []).map((p) => normalizePost(p as Record<string, unknown>)));
   }, []);
 
   const loadHighlights = useCallback(async (companyId: string) => {
-    const { data } = await supabase.from("highlights").select("*").eq("company_id", companyId).order("position");
+    const { data } = await supabase
+      .from("highlights")
+      .select("*")
+      .eq("company_id", companyId)
+      .order("position");
     setHighlights((data ?? []) as Highlight[]);
   }, []);
 
   const load = useCallback(async () => {
     const { data: c } = await supabase.from("companies").select("*").eq("slug", slug).maybeSingle();
-    if (!c) { toast.error("Company not found"); return navigate({ to: "/admin" }); }
+    if (!c) {
+      toast.error("Company not found");
+      return navigate({ to: "/admin" });
+    }
     setCompany(c as Company);
     await Promise.all([loadPosts((c as Company).id, platform), loadHighlights((c as Company).id)]);
   }, [slug, platform, loadPosts, loadHighlights, navigate]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   // Realtime: reflect client approvals/rejections as they happen.
   useEffect(() => {
     if (!company) return;
     const channel = supabase
       .channel(`posts:${company.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "posts", filter: `company_id=eq.${company.id}` }, () => {
-        void loadPosts(company.id, platform);
-      })
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "posts", filter: `company_id=eq.${company.id}` },
+        () => {
+          void loadPosts(company.id, platform);
+        },
+      )
       .subscribe();
-    return () => { void supabase.removeChannel(channel); };
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [company, platform, loadPosts]);
 
   async function uploadFiles(fileList: FileList) {
@@ -90,8 +113,12 @@ function CompanyAdmin() {
     // Friendly size check before we hit the network.
     const { ok: files, tooBig } = splitBySize(Array.from(fileList));
     if (tooBig.length) {
-      const names = tooBig.map((f) => `${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB)`).join(", ");
-      toast.error(`Skipped - over the ${MAX_UPLOAD_MB} MB limit: ${names}. Compress the file or raise the cap in Supabase → Storage settings.`);
+      const names = tooBig
+        .map((f) => `${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB)`)
+        .join(", ");
+      toast.error(
+        `Skipped - over the ${MAX_UPLOAD_MB} MB limit: ${names}. Compress the file or raise the cap in Supabase → Storage settings.`,
+      );
     }
     if (files.length === 0) return;
 
@@ -113,16 +140,23 @@ function CompanyAdmin() {
         // Multiple files become ONE carousel (first = cover, rest = extra_media).
         const [cover, ...rest] = media;
         const { error } = await supabase.from("posts").insert({
-          company_id: company.id, platform, post_type: "carousel",
-          media_url: cover.url, media_type: cover.isVideo ? "video" : "image",
-          extra_media: rest.map((m) => m.url), position: startPos,
+          company_id: company.id,
+          platform,
+          post_type: "carousel",
+          media_url: cover.url,
+          media_type: cover.isVideo ? "video" : "image",
+          extra_media: rest.map((m) => m.url),
+          position: startPos,
         });
         if (error) throw error;
       } else {
         // One post/reel/story per file.
         const rows = media.map((m, i) => ({
-          company_id: company.id, platform, post_type: addType,
-          media_url: m.url, media_type: m.isVideo ? "video" : "image",
+          company_id: company.id,
+          platform,
+          post_type: addType,
+          media_url: m.url,
+          media_type: m.isVideo ? "video" : "image",
           position: startPos + i,
         }));
         const { error } = await supabase.from("posts").insert(rows);
@@ -207,14 +241,33 @@ function CompanyAdmin() {
     <main className="min-h-screen bg-background">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b editorial-rule px-6 py-4">
         <div className="flex items-center gap-4">
-          <Link to="/admin" className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground">← Studio</Link>
+          <Link
+            to="/admin"
+            className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground"
+          >
+            ← Studio
+          </Link>
           <div className="h-4 w-px bg-foreground/20" />
           <span className="font-display text-xl">{company.name}</span>
-          <span className="rounded border editorial-rule px-2 py-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">/c/{company.slug}</span>
+          <span className="rounded border editorial-rule px-2 py-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+            /c/{company.slug}
+          </span>
         </div>
         <div className="flex items-center gap-2">
-          <a href={`/c/${company.slug}`} target="_blank" rel="noreferrer" className="rounded-sm border editorial-rule px-3 py-1.5 text-xs">Open client view ↗</a>
-          <button onClick={copyClientLink} className="rounded-sm border editorial-rule px-3 py-1.5 text-xs">Copy client link</button>
+          <a
+            href={`/c/${company.slug}`}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-sm border editorial-rule px-3 py-1.5 text-xs"
+          >
+            Open client view ↗
+          </a>
+          <button
+            onClick={copyClientLink}
+            className="rounded-sm border editorial-rule px-3 py-1.5 text-xs"
+          >
+            Copy client link
+          </button>
         </div>
       </header>
 
@@ -224,7 +277,13 @@ function CompanyAdmin() {
           <div className="rounded border editorial-rule p-4">
             <p className="text-xs uppercase tracking-widest text-muted-foreground">Live preview</p>
             <div className="mt-3">
-              <PhonePreview platform={platform} company={company} posts={posts} highlights={highlights} onTap={setSelected} />
+              <PhonePreview
+                platform={platform}
+                company={company}
+                posts={posts}
+                highlights={highlights}
+                onTap={setSelected}
+              />
             </div>
           </div>
         </aside>
@@ -257,14 +316,21 @@ function CompanyAdmin() {
               ))}
             </div>
             <label className="ml-auto cursor-pointer rounded-sm bg-foreground px-4 py-2 text-sm text-background">
-              <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={(e) => e.target.files && uploadFiles(e.target.files)} />
+              <input
+                type="file"
+                multiple
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={(e) => e.target.files && uploadFiles(e.target.files)}
+              />
               {uploading ? "Uploading…" : `+ Upload ${addType}`}
             </label>
             <p className="w-full text-[11px] text-muted-foreground">
               {addType === "carousel"
                 ? "Select multiple files - they become one carousel (first = cover)."
-                : `Each file becomes a separate ${addType} on ${platform}. You can also drag tiles to reorder.`}
-              {" "}Images or videos, up to <strong className="text-foreground">{MAX_UPLOAD_MB} MB</strong> each.
+                : `Each file becomes a separate ${addType} on ${platform}. You can also drag tiles to reorder.`}{" "}
+              Images or videos, up to{" "}
+              <strong className="text-foreground">{MAX_UPLOAD_MB} MB</strong> each.
             </p>
           </div>
 
@@ -279,21 +345,29 @@ function CompanyAdmin() {
                     onClick={() => setViewFilter(g.id)}
                     className={`px-3 py-1.5 text-xs uppercase tracking-widest ${viewFilter === g.id ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
                   >
-                    {g.label}<span className="ml-1 opacity-60">{n}</span>
+                    {g.label}
+                    <span className="ml-1 opacity-60">{n}</span>
                   </button>
                 );
               })}
             </div>
             <div className="flex gap-4 text-xs text-muted-foreground">
-              <span><strong className="text-foreground">{counts.pending}</strong> pending</span>
-              <span><strong className="text-emerald-700">{counts.approved}</strong> approved</span>
-              <span><strong className="text-rose-700">{counts.rejected}</strong> rejected</span>
+              <span>
+                <strong className="text-foreground">{counts.pending}</strong> pending
+              </span>
+              <span>
+                <strong className="text-emerald-700">{counts.approved}</strong> approved
+              </span>
+              <span>
+                <strong className="text-rose-700">{counts.rejected}</strong> rejected
+              </span>
             </div>
           </div>
 
           {view.length === 0 ? (
             <p className="mt-10 py-10 text-center text-sm text-muted-foreground">
-              No {viewFilter} for {platform} yet. Pick <strong className="text-foreground">{addType}</strong> above and upload.
+              No {viewFilter} for {platform} yet. Pick{" "}
+              <strong className="text-foreground">{addType}</strong> above and upload.
             </p>
           ) : (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
@@ -303,61 +377,139 @@ function CompanyAdmin() {
                     <SortableTile key={p.id} post={p} onOpen={() => setSelected(p)} />
                   ))}
                 </div>
-                {view.length > 1 && <p className="mt-3 text-[11px] italic text-muted-foreground">Drag tiles to reorder within {viewFilter}.</p>}
+                {view.length > 1 && (
+                  <p className="mt-3 text-[11px] italic text-muted-foreground">
+                    Drag tiles to reorder within {viewFilter}.
+                  </p>
+                )}
               </SortableContext>
             </DndContext>
           )}
           <div className="mt-8 grid gap-6 md:grid-cols-2">
             <div className="rounded border editorial-rule p-4">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Client access</p>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                Client access
+              </p>
               <div className="mt-3 space-y-2">
-                <ProfileField label="Client password" value={company.client_password ?? ""} onSave={(v) => saveCompany({ client_password: v })} />
-                <p className="text-[11px] text-muted-foreground">Client visits <span className="font-mono">/c/{company.slug}</span> and enters this password.</p>
+                <ProfileField
+                  label="Client password"
+                  value={company.client_password ?? ""}
+                  onSave={(v) => saveCompany({ client_password: v })}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Client visits <span className="font-mono">/c/{company.slug}</span> and enters this
+                  password.
+                </p>
               </div>
             </div>
 
             <div className="rounded border editorial-rule p-4">
               <p className="text-xs uppercase tracking-widest text-muted-foreground">Profile</p>
               <div className="mt-3 space-y-2">
-                <ProfileField label="Username" value={company.username ?? ""} onSave={(v) => saveCompany({ username: v })} />
-                <ProfileField label="Category" value={company.category ?? ""} onSave={(v) => saveCompany({ category: v })} />
-                <ProfileField label="Followers" value={company.followers ?? "0"} onSave={(v) => saveCompany({ followers: v })} />
-                <ProfileField label="Following" value={String(company.following ?? 0)} onSave={(v) => saveCompany({ following: Number(v) || 0 })} />
-                <ProfileField label="Link" value={company.link ?? ""} onSave={(v) => saveCompany({ link: v })} />
-                <ProfileField label="Bio" value={company.bio ?? ""} multiline onSave={(v) => saveCompany({ bio: v })} />
-                <ProfileField label="Profile pic URL" value={company.profile_pic_url ?? ""} onSave={(v) => saveCompany({ profile_pic_url: v })} />
+                <ProfileField
+                  label="Username"
+                  value={company.username ?? ""}
+                  onSave={(v) => saveCompany({ username: v })}
+                />
+                <ProfileField
+                  label="Category"
+                  value={company.category ?? ""}
+                  onSave={(v) => saveCompany({ category: v })}
+                />
+                <ProfileField
+                  label="Followers"
+                  value={company.followers ?? "0"}
+                  onSave={(v) => saveCompany({ followers: v })}
+                />
+                <ProfileField
+                  label="Following"
+                  value={String(company.following ?? 0)}
+                  onSave={(v) => saveCompany({ following: Number(v) || 0 })}
+                />
+                <ProfileField
+                  label="Link"
+                  value={company.link ?? ""}
+                  onSave={(v) => saveCompany({ link: v })}
+                />
+                <ProfileField
+                  label="Bio"
+                  value={company.bio ?? ""}
+                  multiline
+                  onSave={(v) => saveCompany({ bio: v })}
+                />
+                <ProfileField
+                  label="Profile pic URL"
+                  value={company.profile_pic_url ?? ""}
+                  onSave={(v) => saveCompany({ profile_pic_url: v })}
+                />
                 <div>
-                  <span className="text-xs uppercase tracking-widest text-muted-foreground">Cover / banner</span>
+                  <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                    Cover / banner
+                  </span>
                   <div className="mt-1 flex items-center gap-2">
                     <span className="h-9 w-16 overflow-hidden rounded bg-foreground/5">
-                      {company.cover_url && <img src={company.cover_url} className="h-full w-full object-cover" />}
+                      {company.cover_url && (
+                        <img src={company.cover_url} className="h-full w-full object-cover" />
+                      )}
                     </span>
                     <label className="cursor-pointer rounded-sm border editorial-rule px-2 py-1 text-[11px]">
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])} />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => e.target.files?.[0] && uploadCover(e.target.files[0])}
+                      />
                       {coverBusy ? "Uploading…" : company.cover_url ? "Replace" : "Upload"}
                     </label>
-                    {company.cover_url && <button onClick={() => saveCompany({ cover_url: null })} className="text-[11px] text-muted-foreground hover:text-foreground">Remove</button>}
+                    {company.cover_url && (
+                      <button
+                        onClick={() => saveCompany({ cover_url: null })}
+                        className="text-[11px] text-muted-foreground hover:text-foreground"
+                      >
+                        Remove
+                      </button>
+                    )}
                   </div>
-                  <p className="mt-1 text-[11px] text-muted-foreground">Shown as the banner on Facebook, X &amp; LinkedIn pages.</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    Shown as the banner on Facebook, X &amp; LinkedIn pages.
+                  </p>
                 </div>
               </div>
             </div>
 
             <div className="md:col-span-2">
-              <HighlightsCard company={company} highlights={highlights} onChanged={() => loadHighlights(company.id)} />
+              <HighlightsCard
+                company={company}
+                highlights={highlights}
+                onChanged={() => loadHighlights(company.id)}
+              />
             </div>
           </div>
         </section>
       </div>
 
-      {selected && <PostDialog post={selected} mode="admin" open={!!selected} onClose={() => setSelected(null)} onChanged={() => loadPosts(company.id, platform)} />}
+      {selected && (
+        <PostDialog
+          post={selected}
+          mode="admin"
+          open={!!selected}
+          onClose={() => setSelected(null)}
+          onChanged={() => loadPosts(company.id, platform)}
+        />
+      )}
     </main>
   );
 }
 
 function SortableTile({ post, onOpen }: { post: Post; onOpen: () => void }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: post.id });
-  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: post.id,
+  });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
   return (
     <button
       ref={setNodeRef}
@@ -368,15 +520,31 @@ function SortableTile({ post, onOpen }: { post: Post; onOpen: () => void }) {
       className={`group relative aspect-square touch-none overflow-hidden rounded border editorial-rule bg-foreground/5 ${post.status === "approved" ? "ring-2 ring-emerald-500" : post.status === "rejected" ? "ring-2 ring-rose-500" : ""}`}
     >
       <Media post={post} className="h-full w-full object-cover" />
-      {(post.post_type === "reel" || post.media_type === "video") && <Play className="absolute right-1 top-1 h-3.5 w-3.5 fill-white text-white drop-shadow" />}
-      {post.post_type === "carousel" && <Images className="absolute right-1 top-1 h-3.5 w-3.5 text-white drop-shadow" />}
-      <span className="absolute bottom-1 right-1 rounded bg-background/90 px-1.5 py-0.5 text-[10px] uppercase tracking-widest">{post.status}</span>
-      <span className="absolute left-1 top-1 rounded bg-background/90 px-1.5 py-0.5 text-[9px] uppercase tracking-widest text-muted-foreground">{post.post_type}</span>
+      {(post.post_type === "reel" || post.media_type === "video") && (
+        <Play className="absolute right-1 top-1 h-3.5 w-3.5 fill-white text-white drop-shadow" />
+      )}
+      {post.post_type === "carousel" && (
+        <Images className="absolute right-1 top-1 h-3.5 w-3.5 text-white drop-shadow" />
+      )}
+      <span className="absolute bottom-1 right-1 rounded bg-background/90 px-1.5 py-0.5 text-[10px] uppercase tracking-widest">
+        {post.status}
+      </span>
+      <span className="absolute left-1 top-1 rounded bg-background/90 px-1.5 py-0.5 text-[9px] uppercase tracking-widest text-muted-foreground">
+        {post.post_type}
+      </span>
     </button>
   );
 }
 
-function HighlightsCard({ company, highlights, onChanged }: { company: Company; highlights: Highlight[]; onChanged: () => void }) {
+function HighlightsCard({
+  company,
+  highlights,
+  onChanged,
+}: {
+  company: Company;
+  highlights: Highlight[];
+  onChanged: () => void;
+}) {
   const [emoji, setEmoji] = useState("");
   const [label, setLabel] = useState("");
   const [busy, setBusy] = useState(false);
@@ -385,11 +553,16 @@ function HighlightsCard({ company, highlights, onChanged }: { company: Company; 
     if (!emoji && !label && !image) return;
     setBusy(true);
     const { error } = await supabase.from("highlights").insert({
-      company_id: company.id, emoji: emoji || null, label: label || null, image: image || null, position: highlights.length,
+      company_id: company.id,
+      emoji: emoji || null,
+      label: label || null,
+      image: image || null,
+      position: highlights.length,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
-    setEmoji(""); setLabel("");
+    setEmoji("");
+    setLabel("");
     onChanged();
   }
 
@@ -422,26 +595,56 @@ function HighlightsCard({ company, highlights, onChanged }: { company: Company; 
             <div key={h.id} className="flex w-14 flex-col items-center gap-1">
               <div className="relative">
                 <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-full border editorial-rule bg-foreground/5">
-                  {h.image ? <img src={h.image} className="h-full w-full object-cover" /> : <span className="text-lg">{h.emoji || "○"}</span>}
+                  {h.image ? (
+                    <img src={h.image} className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-lg">{h.emoji || "○"}</span>
+                  )}
                 </span>
-                <button onClick={() => remove(h.id)} className="absolute -right-1 -top-1 rounded-full bg-background p-0.5 shadow">
+                <button
+                  onClick={() => remove(h.id)}
+                  className="absolute -right-1 -top-1 rounded-full bg-background p-0.5 shadow"
+                >
                   <Trash2 className="h-3 w-3" />
                 </button>
               </div>
-              <span className="max-w-[56px] truncate text-[10px] text-muted-foreground">{h.label}</span>
+              <span className="max-w-[56px] truncate text-[10px] text-muted-foreground">
+                {h.label}
+              </span>
             </div>
           ))}
         </div>
       )}
       <div className="mt-4 space-y-2">
         <div className="flex gap-2">
-          <input value={emoji} onChange={(e) => setEmoji(e.target.value)} placeholder="😎" className="w-14 rounded border editorial-rule bg-transparent px-2 py-1.5 text-center text-sm" />
-          <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Label" className="flex-1 rounded border editorial-rule bg-transparent px-2 py-1.5 text-sm" />
+          <input
+            value={emoji}
+            onChange={(e) => setEmoji(e.target.value)}
+            placeholder="😎"
+            className="w-14 rounded border editorial-rule bg-transparent px-2 py-1.5 text-center text-sm"
+          />
+          <input
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder="Label"
+            className="flex-1 rounded border editorial-rule bg-transparent px-2 py-1.5 text-sm"
+          />
         </div>
         <div className="flex gap-2">
-          <button disabled={busy} onClick={() => add()} className="flex-1 rounded-sm bg-foreground py-1.5 text-xs text-background disabled:opacity-50">Add</button>
+          <button
+            disabled={busy}
+            onClick={() => add()}
+            className="flex-1 rounded-sm bg-foreground py-1.5 text-xs text-background disabled:opacity-50"
+          >
+            Add
+          </button>
           <label className="cursor-pointer rounded-sm border editorial-rule px-3 py-1.5 text-xs">
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadAndAdd(e.target.files[0])} />
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && uploadAndAdd(e.target.files[0])}
+            />
             Image
           </label>
         </div>
@@ -450,7 +653,17 @@ function HighlightsCard({ company, highlights, onChanged }: { company: Company; 
   );
 }
 
-function ProfileField({ label, value, multiline, onSave }: { label: string; value: string; multiline?: boolean; onSave: (v: string) => void }) {
+function ProfileField({
+  label,
+  value,
+  multiline,
+  onSave,
+}: {
+  label: string;
+  value: string;
+  multiline?: boolean;
+  onSave: (v: string) => void;
+}) {
   const [v, setV] = useState(value);
   useEffect(() => setV(value), [value]);
   return (
@@ -458,13 +671,27 @@ function ProfileField({ label, value, multiline, onSave }: { label: string; valu
       <div className="flex items-center justify-between">
         <span className="text-xs uppercase tracking-widest text-muted-foreground">{label}</span>
         {v !== value && (
-          <button onClick={() => onSave(v)} className="text-[10px] uppercase tracking-widest text-foreground">Save</button>
+          <button
+            onClick={() => onSave(v)}
+            className="text-[10px] uppercase tracking-widest text-foreground"
+          >
+            Save
+          </button>
         )}
       </div>
       {multiline ? (
-        <textarea value={v} onChange={(e) => setV(e.target.value)} rows={2} className="mt-1 w-full rounded border editorial-rule bg-transparent p-2 text-sm" />
+        <textarea
+          value={v}
+          onChange={(e) => setV(e.target.value)}
+          rows={2}
+          className="mt-1 w-full rounded border editorial-rule bg-transparent p-2 text-sm"
+        />
       ) : (
-        <input value={v} onChange={(e) => setV(e.target.value)} className="mt-1 w-full border-b editorial-rule bg-transparent py-1.5 text-sm outline-none focus:border-foreground" />
+        <input
+          value={v}
+          onChange={(e) => setV(e.target.value)}
+          className="mt-1 w-full border-b editorial-rule bg-transparent py-1.5 text-sm outline-none focus:border-foreground"
+        />
       )}
     </div>
   );

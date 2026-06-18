@@ -1,4 +1,3 @@
-
 # Social Media Simulator & Approval Tool
 
 A fresh rebuild of the EIDEN PHP tool on Lovable Cloud (React + Postgres + Auth + Storage). Superadmin uploads mock posts/reels for each client company across multiple platforms; clients log in to their own branded workspace, preview content exactly as it will appear on Instagram / TikTok / Facebook / X / LinkedIn, and approve or reject each item with comments.
@@ -15,6 +14,7 @@ Paper & Ink editorial — off-white `#f5f3ee` canvas, deep ink `#0d0d0d`, soft c
 ## Core features
 
 ### Superadmin dashboard
+
 - Companies list (create / edit / delete) — each gets a slug, brand name, accent color, logo, client email/password.
 - Per-company workspace with tabs per platform (Instagram, TikTok, Facebook, X, LinkedIn).
 - Upload posts: image/video, caption, scheduled date, post type (feed post, reel, story, carousel).
@@ -22,6 +22,7 @@ Paper & Ink editorial — off-white `#f5f3ee` canvas, deep ink `#0d0d0d`, soft c
 - Status overview: pending / approved / rejected counts + client comments feed.
 
 ### Client workspace
+
 - Branded login (company accent color + logo).
 - Realistic device mockups per platform:
   - **Instagram**: profile grid, post detail, reels vertical view
@@ -32,6 +33,7 @@ Paper & Ink editorial — off-white `#f5f3ee` canvas, deep ink `#0d0d0d`, soft c
 - Tap any post → Approve / Reject + comment textarea → instantly synced.
 
 ### Shareable
+
 - Each company has a stable URL: `/c/{slug}` (login) and `/c/{slug}/workspace` (after auth).
 - Approvals timestamped; superadmin sees full history.
 

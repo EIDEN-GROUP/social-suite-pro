@@ -195,3 +195,28 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 
+-- >>>>>>>>>>>>>>>>>>>>  20260605120000_company_cover.sql  <<<<<<<<<<<<<<<<<<<<
+-- Cover / banner image per company (used on Facebook, X, LinkedIn page headers).
+ALTER TABLE public.companies ADD COLUMN IF NOT EXISTS cover_url text;
+
+
+-- >>>>>>>>>>>>>>>>>>>>  20260608120000_contacts.sql  <<<<<<<<<<<<<<<<<<<<
+-- Contact form leads. Submissions arrive only through the validated
+-- `submitContact` server function (service-role insert), so the table stays
+-- fully locked to anon/authenticated traffic. The studio superadmin can read.
+CREATE TABLE IF NOT EXISTS public.contacts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  email text,
+  phone text,
+  message text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+GRANT ALL ON public.contacts TO service_role;
+ALTER TABLE public.contacts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Superadmin reads contacts" ON public.contacts;
+CREATE POLICY "Superadmin reads contacts" ON public.contacts FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'superadmin'));
+
+

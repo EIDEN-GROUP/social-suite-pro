@@ -79,7 +79,10 @@ export function PostDialog({ post, mode, open, onClose, onChanged, onDecide }: P
       }
       const next = [...extra, ...added];
       setExtra(next);
-      const { error } = await supabase.from("posts").update({ extra_media: next, post_type: "carousel" }).eq("id", post.id);
+      const { error } = await supabase
+        .from("posts")
+        .update({ extra_media: next, post_type: "carousel" })
+        .eq("id", post.id);
       if (error) throw error;
       setType("carousel");
       toast.success("Added to carousel");
@@ -105,17 +108,32 @@ export function PostDialog({ post, mode, open, onClose, onChanged, onDecide }: P
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4" onClick={onClose}>
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-md bg-background shadow-2xl" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-md bg-background shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="border-b editorial-rule p-4">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">{post.platform} · {type}</p>
+          <p className="text-xs uppercase tracking-widest text-muted-foreground">
+            {post.platform} · {type}
+          </p>
           <h3 className="font-display text-2xl">Review</h3>
         </div>
         {post.media_url && (
           <div className="bg-foreground/5">
-            {post.media_type === "video"
-              ? <video src={post.media_url} className="max-h-[40vh] w-full object-contain" controls playsInline />
-              : <img src={post.media_url} className="max-h-[40vh] w-full object-contain" />}
+            {post.media_type === "video" ? (
+              <video
+                src={post.media_url}
+                className="max-h-[40vh] w-full object-contain"
+                controls
+                playsInline
+              />
+            ) : (
+              <img src={post.media_url} className="max-h-[40vh] w-full object-contain" />
+            )}
           </div>
         )}
         {extra.length > 0 && (
@@ -124,7 +142,10 @@ export function PostDialog({ post, mode, open, onClose, onChanged, onDecide }: P
               <div key={u} className="relative shrink-0">
                 <img src={u} className="h-16 w-16 rounded object-cover" />
                 {mode === "admin" && (
-                  <button onClick={() => removeExtra(u)} className="absolute -right-1 -top-1 rounded-full bg-background p-0.5 shadow">
+                  <button
+                    onClick={() => removeExtra(u)}
+                    className="absolute -right-1 -top-1 rounded-full bg-background p-0.5 shadow"
+                  >
                     <X className="h-3 w-3" />
                   </button>
                 )}
@@ -136,21 +157,40 @@ export function PostDialog({ post, mode, open, onClose, onChanged, onDecide }: P
           {mode === "admin" ? (
             <>
               <label className="block">
-                <span className="text-xs uppercase tracking-widest text-muted-foreground">Post type</span>
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                  Post type
+                </span>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as PostType)}
                   className="mt-1 w-full rounded border editorial-rule bg-transparent p-2 text-sm"
                 >
-                  {POST_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
+                  {POST_TYPES.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.label}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label className="block">
-                <span className="text-xs uppercase tracking-widest text-muted-foreground">Caption</span>
-                <textarea value={caption} onChange={(e) => setCaption(e.target.value)} rows={3} className="mt-1 w-full rounded border editorial-rule bg-transparent p-2 text-sm" />
+                <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                  Caption
+                </span>
+                <textarea
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)}
+                  rows={3}
+                  className="mt-1 w-full rounded border editorial-rule bg-transparent p-2 text-sm"
+                />
               </label>
               <label className="block cursor-pointer rounded border border-dashed editorial-rule p-3 text-center text-xs uppercase tracking-widest text-muted-foreground hover:bg-foreground/[0.02]">
-                <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={(e) => e.target.files && addCarouselMedia(e.target.files)} />
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,video/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files && addCarouselMedia(e.target.files)}
+                />
                 + Add carousel media
               </label>
             </>
@@ -173,23 +213,51 @@ export function PostDialog({ post, mode, open, onClose, onChanged, onDecide }: P
           </label>
 
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Status: <strong className="text-foreground">{post.status}</strong></span>
+            <span>
+              Status: <strong className="text-foreground">{post.status}</strong>
+            </span>
             {post.decided_at && <span>{new Date(post.decided_at).toLocaleString()}</span>}
           </div>
         </div>
         <div className="flex flex-wrap gap-2 border-t editorial-rule p-4">
           {mode === "client" ? (
             <>
-              <button disabled={busy} onClick={() => decide("approved")} className="flex-1 rounded-sm bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">Approve</button>
-              <button disabled={busy || !comment.trim()} onClick={() => decide("rejected")} className="flex-1 rounded-sm bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50">Reject</button>
+              <button
+                disabled={busy}
+                onClick={() => decide("approved")}
+                className="flex-1 rounded-sm bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              >
+                Approve
+              </button>
+              <button
+                disabled={busy || !comment.trim()}
+                onClick={() => decide("rejected")}
+                className="flex-1 rounded-sm bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              >
+                Reject
+              </button>
             </>
           ) : (
             <>
-              <button disabled={busy} onClick={saveAdmin} className="flex-1 rounded-sm bg-foreground px-4 py-2 text-sm font-medium text-background">Save</button>
-              <button disabled={busy} onClick={remove} className="rounded-sm border editorial-rule px-4 py-2 text-sm">Delete</button>
+              <button
+                disabled={busy}
+                onClick={saveAdmin}
+                className="flex-1 rounded-sm bg-foreground px-4 py-2 text-sm font-medium text-background"
+              >
+                Save
+              </button>
+              <button
+                disabled={busy}
+                onClick={remove}
+                className="rounded-sm border editorial-rule px-4 py-2 text-sm"
+              >
+                Delete
+              </button>
             </>
           )}
-          <button onClick={onClose} className="rounded-sm border editorial-rule px-4 py-2 text-sm">Close</button>
+          <button onClick={onClose} className="rounded-sm border editorial-rule px-4 py-2 text-sm">
+            Close
+          </button>
         </div>
       </div>
     </div>

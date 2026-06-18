@@ -37,6 +37,30 @@ function publicCompany(c: Company): Company {
   return rest as Company;
 }
 
+export type CompanyBranding = {
+  name: string;
+  accent_color: string;
+  logo_url: string | null;
+  profile_pic_url: string | null;
+};
+
+/**
+ * Public, password-free branding for a workspace slug so the login screen can
+ * greet the client in their own colours and logo before they authenticate.
+ * Returns only safe display fields - never the password or any content.
+ */
+export const getCompanyBranding = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({ slug: z.string().min(1).max(80) }).parse(input))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: company } = await supabaseAdmin
+      .from("companies")
+      .select("name, accent_color, logo_url, profile_pic_url")
+      .eq("slug", data.slug)
+      .maybeSingle();
+    return { branding: (company as CompanyBranding | null) ?? null };
+  });
+
 export const getClientWorkspace = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
@@ -52,11 +76,7 @@ export const getClientWorkspace = createServerFn({ method: "POST" })
 
     const [{ data: posts }, { data: highlights }] = await Promise.all([
       supabaseAdmin.from("posts").select("*").eq("company_id", company.id).order("position"),
-      supabaseAdmin
-        .from("highlights")
-        .select("*")
-        .eq("company_id", company.id)
-        .order("position"),
+      supabaseAdmin.from("highlights").select("*").eq("company_id", company.id).order("position"),
     ]);
 
     return {
