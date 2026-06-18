@@ -11,10 +11,11 @@ import {
   type CompanyBranding,
 } from "@/lib/client.functions";
 import { Media } from "@/components/Media";
-import { AuthAura } from "@/components/AuthAura";
+import { AuroraLayer } from "@/components/AuthAura";
 import {
   Lock,
   ArrowRight,
+  Check,
   ChevronDown,
   PlusSquare,
   AlignJustify,
@@ -130,21 +131,84 @@ function ClientRoom() {
     const accent = branding?.accent_color || undefined;
     const logo = branding?.logo_url || branding?.profile_pic_url || null;
     const brandName = branding?.name;
+    const initials = (brandName || slug).slice(0, 2).toUpperCase();
+    const BrandMark = ({ size }: { size: string }) => (
+      <span
+        className={`grid shrink-0 place-items-center overflow-hidden rounded-2xl text-base font-bold text-white shadow-lg ${size}`}
+        style={{ background: accent || "#0d0d0d" }}
+      >
+        {logo ? <img src={logo} alt="" className="h-full w-full object-cover" /> : initials}
+      </span>
+    );
+
     return (
-      <AuthAura accent={accent}>
-        <div className="animate-rise w-full max-w-md">
-          <div className="auth-card rounded-[2rem] border border-white/40 p-8 sm:p-10">
-            <div className="flex items-center gap-3">
-              <span
-                className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl text-base font-bold text-white shadow-lg"
-                style={{ background: accent || "#0d0d0d" }}
-              >
-                {logo ? (
-                  <img src={logo} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  (brandName || slug).slice(0, 2).toUpperCase()
-                )}
+      <main className="grid min-h-screen grid-cols-1 bg-background text-foreground lg:grid-cols-[1.05fr_1fr]">
+        {/* LEFT — branded aurora showcase */}
+        <section className="relative hidden flex-col justify-between overflow-hidden border-r editorial-rule p-12 lg:flex xl:p-16">
+          <AuroraLayer accent={accent} />
+
+          <div className="relative z-10 flex items-center gap-3">
+            <BrandMark size="h-11 w-11" />
+            <div className="min-w-0">
+              <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
+                Approval room
+              </p>
+              <p className="truncate font-display text-xl leading-tight">
+                {brandName || `/${slug}`}
+              </p>
+            </div>
+          </div>
+
+          <div className="relative z-10">
+            <h1 className="font-display text-6xl leading-[0.92] xl:text-7xl">
+              Your work,
+              <br />
+              <span className="text-social-gradient">ready for review.</span>
+            </h1>
+            <p className="mt-5 max-w-md text-base text-muted-foreground">
+              Swipe through every post, reel and story in true-to-life mockups — then approve or
+              request changes in a single tap.
+            </p>
+
+            {/* Floating decision chips */}
+            <div className="mt-9 flex flex-wrap gap-3">
+              <span className="auth-card flex items-center gap-2 rounded-2xl border border-white/40 px-3.5 py-2.5">
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-emerald-500 text-white">
+                  <Check className="h-4 w-4" />
+                </span>
+                <span className="text-xs">
+                  <span className="block font-semibold">Approved</span>
+                  <span className="text-muted-foreground">Reel · just now</span>
+                </span>
               </span>
+              <span className="auth-card flex items-center gap-2 rounded-2xl border border-white/40 px-3.5 py-2.5">
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-rose-500 text-white">
+                  <MessageCircle className="h-4 w-4" />
+                </span>
+                <span className="text-xs">
+                  <span className="block font-semibold">“Brighten the logo?”</span>
+                  <span className="text-muted-foreground">Your comment</span>
+                </span>
+              </span>
+            </div>
+          </div>
+
+          <p className="relative z-10 text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
+            Powered by Atelier
+          </p>
+        </section>
+
+        {/* RIGHT — sign-in form */}
+        <section className="relative flex items-center justify-center overflow-hidden p-6 sm:p-10">
+          {/* Mobile-only aurora wash since the left panel is hidden */}
+          <div className="absolute inset-0 -z-10 opacity-70 lg:hidden">
+            <AuroraLayer accent={accent} />
+          </div>
+
+          <div className="animate-rise w-full max-w-sm">
+            {/* Brand header (shows on mobile where the left panel is hidden) */}
+            <div className="mb-8 flex items-center gap-3 lg:hidden">
+              <BrandMark size="h-12 w-12" />
               <div className="min-w-0">
                 <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
                   Approval room
@@ -155,16 +219,13 @@ function ClientRoom() {
               </div>
             </div>
 
-            <h1 className="mt-7 font-display text-5xl leading-[0.95]">
-              Your work,
-              <br />
-              ready for review.
-            </h1>
+            <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">Welcome</p>
+            <h2 className="mt-2 font-display text-4xl leading-tight">Enter your workspace</h2>
             <p className="mt-3 text-sm text-muted-foreground">
               {brandName ? (
                 <>
-                  Enter the password your studio shared to open the{" "}
-                  <strong className="text-foreground">{brandName}</strong> workspace.
+                  Use the password your studio shared to open the{" "}
+                  <strong className="text-foreground">{brandName}</strong> room.
                 </>
               ) : (
                 <>
@@ -187,7 +248,7 @@ function ClientRoom() {
                     value={pw}
                     onChange={(e) => setPw(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full rounded-xl border border-foreground/10 bg-background/50 py-3 pl-11 pr-4 text-base outline-none transition focus:border-foreground/40 focus:bg-background/80 focus:ring-4 focus:ring-foreground/5"
+                    className="w-full rounded-xl border border-foreground/15 bg-card/60 py-3 pl-11 pr-4 text-base outline-none transition focus:border-foreground/40 focus:bg-card focus:ring-4 focus:ring-foreground/5"
                   />
                 </div>
               </label>
@@ -202,13 +263,13 @@ function ClientRoom() {
                 )}
               </button>
             </form>
-          </div>
 
-          <p className="mt-6 text-center text-[11px] text-muted-foreground">
-            Reviewed in seconds — no account needed. Powered by Atelier.
-          </p>
-        </div>
-      </AuthAura>
+            <p className="mt-8 text-[11px] text-muted-foreground">
+              Reviewed in seconds — no account needed.
+            </p>
+          </div>
+        </section>
+      </main>
     );
   }
 

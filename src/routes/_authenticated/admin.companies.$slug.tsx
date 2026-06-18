@@ -56,6 +56,8 @@ function CompanyAdmin() {
   const [viewFilter, setViewFilter] = useState<ViewGroup>("posts");
   const [coverBusy, setCoverBusy] = useState(false);
   const [picBusy, setPicBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const loadPosts = useCallback(async (companyId: string, pf: Platform) => {
     const { data: ps } = await supabase
@@ -247,6 +249,17 @@ function CompanyAdmin() {
     toast.success("Client link copied");
   }
 
+  async function deleteCompany() {
+    if (!company) return;
+    setDeleteBusy(true);
+    // Posts, highlights and the client role cascade via ON DELETE CASCADE.
+    const { error } = await supabase.from("companies").delete().eq("id", company.id);
+    setDeleteBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success(`Deleted ${company.name}`);
+    navigate({ to: "/admin" });
+  }
+
   if (!company) return <div className="p-10 text-sm text-muted-foreground">Loading…</div>;
 
   const counts = {
@@ -286,6 +299,12 @@ function CompanyAdmin() {
             className="rounded-sm border editorial-rule px-3 py-1.5 text-xs"
           >
             Copy client link
+          </button>
+          <button
+            onClick={() => setConfirmDelete(true)}
+            className="rounded-sm border border-rose-300 px-3 py-1.5 text-xs text-rose-600 hover:bg-rose-50"
+          >
+            Delete
           </button>
         </div>
       </header>
@@ -544,6 +563,45 @@ function CompanyAdmin() {
           onClose={() => setSelected(null)}
           onChanged={() => loadPosts(company.id, platform)}
         />
+      )}
+
+      {confirmDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4"
+          onClick={() => !deleteBusy && setConfirmDelete(false)}
+        >
+          <div
+            className="w-full max-w-md rounded bg-background p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-xs uppercase tracking-widest text-rose-600">Danger zone</p>
+            <h2 className="mt-1 font-display text-3xl">Delete this company?</h2>
+            <p className="mt-3 text-sm text-muted-foreground">
+              This permanently removes <strong className="text-foreground">{company.name}</strong>{" "}
+              along with{" "}
+              <strong className="text-foreground">
+                all its posts, highlights and the client login
+              </strong>
+              . This cannot be undone.
+            </p>
+            <div className="mt-6 flex gap-2">
+              <button
+                disabled={deleteBusy}
+                onClick={deleteCompany}
+                className="flex-1 rounded-sm bg-rose-600 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {deleteBusy ? "Deleting…" : "Delete company"}
+              </button>
+              <button
+                disabled={deleteBusy}
+                onClick={() => setConfirmDelete(false)}
+                className="rounded-sm border editorial-rule px-4 py-2.5 text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );
