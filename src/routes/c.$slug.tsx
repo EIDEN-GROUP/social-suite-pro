@@ -318,7 +318,7 @@ function ReviewPhone({
   const viewerIdx = viewer ? viewer.list.findIndex((p) => p.id === viewer.id) : -1;
 
   return (
-    <main className="flex h-[100svh] flex-col overflow-hidden bg-neutral-100 text-foreground">
+    <main className="flex min-h-screen flex-col bg-neutral-100 text-foreground">
       <header className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-foreground/10 bg-background px-4 py-2">
         <div className="flex items-center gap-3">
           <span
@@ -342,7 +342,7 @@ function ReviewPhone({
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 flex-col items-center gap-2 px-4 py-2">
+      <div className="flex flex-1 flex-col items-center gap-3 px-4 py-6">
         {/* Platform switcher */}
         <div className="flex shrink-0 flex-wrap justify-center gap-1 rounded-full border editorial-rule bg-background p-1">
           {PLATFORMS.map((p) => {
@@ -366,48 +366,41 @@ function ReviewPhone({
           Tap any post to approve or request changes
         </p>
 
-        {/* Phone slot - fills the remaining height so the device fits any
-            screen (ThinkPads / short laptops) with no crop and no page scroll. */}
-        <div className="flex min-h-0 w-full flex-1 items-center justify-center">
-          <div
-            className="relative h-full overflow-hidden rounded-[44px] border-[11px] border-neutral-900 bg-background shadow-2xl"
-            style={{ aspectRatio: "9 / 19.5", maxHeight: "900px", maxWidth: "min(440px, 92vw)" }}
-          >
-            <div className="absolute left-1/2 top-2 z-30 h-6 w-32 -translate-x-1/2 rounded-full bg-neutral-900" />
+        {/* Phone - a fixed, stable size. The page scrolls if the screen is
+            short, and browser zoom scales it uniformly instead of reflowing. */}
+        <div
+          className="relative mx-auto shrink-0 overflow-hidden rounded-[44px] border-[11px] border-neutral-900 bg-background shadow-2xl"
+          style={{ aspectRatio: "9 / 19.5", width: "min(390px, 92vw)" }}
+        >
+          <div className="absolute left-1/2 top-2 z-30 h-6 w-32 -translate-x-1/2 rounded-full bg-neutral-900" />
 
-            {platform === "instagram" ? (
-              <Instagram
-                company={company}
-                posts={platformPosts}
-                highlights={highlights}
-                igTab={igTab}
-                setIgTab={setIgTab}
-                onOpen={open}
-              />
-            ) : (
-              <FeedPhone
-                platform={platform}
-                company={company}
-                posts={platformPosts}
-                onOpen={open}
-              />
-            )}
+          {platform === "instagram" ? (
+            <Instagram
+              company={company}
+              posts={platformPosts}
+              highlights={highlights}
+              igTab={igTab}
+              setIgTab={setIgTab}
+              onOpen={open}
+            />
+          ) : (
+            <FeedPhone platform={platform} company={company} posts={platformPosts} onOpen={open} />
+          )}
 
-            {viewer && viewerIdx >= 0 && (
-              <PostViewer
-                post={viewer.list[viewerIdx]}
-                index={viewerIdx}
-                total={viewer.list.length}
-                onClose={() => setViewer(null)}
-                onNav={(dir) => {
-                  const next = viewerIdx + dir;
-                  if (next < 0 || next >= viewer.list.length) setViewer(null);
-                  else setViewer({ list: viewer.list, id: viewer.list[next].id });
-                }}
-                onDecide={onDecide}
-              />
-            )}
-          </div>
+          {viewer && viewerIdx >= 0 && (
+            <PostViewer
+              post={viewer.list[viewerIdx]}
+              index={viewerIdx}
+              total={viewer.list.length}
+              onClose={() => setViewer(null)}
+              onNav={(dir) => {
+                const next = viewerIdx + dir;
+                if (next < 0 || next >= viewer.list.length) setViewer(null);
+                else setViewer({ list: viewer.list, id: viewer.list[next].id });
+              }}
+              onDecide={onDecide}
+            />
+          )}
         </div>
       </div>
     </main>
