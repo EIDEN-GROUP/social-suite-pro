@@ -21,6 +21,8 @@ export function PostDialog({ post, mode, open, onClose, onChanged, onDecide }: P
   const [comment, setComment] = useState(post.client_comment ?? "");
   const [type, setType] = useState<PostType>(post.post_type);
   const [extra, setExtra] = useState<string[]>(post.extra_media ?? []);
+  const [mediaUrl, setMediaUrl] = useState(post.media_url);
+  const [mediaType, setMediaType] = useState(post.media_type);
   const [busy, setBusy] = useState(false);
 
   if (!open) return null;
@@ -94,6 +96,33 @@ export function PostDialog({ post, mode, open, onClose, onChanged, onDecide }: P
     }
   }
 
+  // Swap the post's primary image/video in place - no need to delete and re-add.
+  async function replaceMedia(file: File) {
+    const { tooBig } = splitBySize([file]);
+    if (tooBig.length) return toast.error(`File is over the ${MAX_UPLOAD_MB} MB limit.`);
+    setBusy(true);
+    try {
+      const path = `${post.company_id}/${post.platform}/${post.id}/${Date.now()}-${safeStorageName(file.name)}`;
+      const { error: upErr } = await supabase.storage.from("media").upload(path, file);
+      if (upErr) throw upErr;
+      const url = supabase.storage.from("media").getPublicUrl(path).data.publicUrl;
+      const newType = file.type.startsWith("video") ? "video" : "image";
+      const { error } = await supabase
+        .from("posts")
+        .update({ media_url: url, media_type: newType })
+        .eq("id", post.id);
+      if (error) throw error;
+      setMediaUrl(url);
+      setMediaType(newType);
+      toast.success("Media replaced");
+      onChanged();
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function removeExtra(url: string) {
     setExtra((cur) => cur.filter((u) => u !== url));
   }
@@ -122,17 +151,28 @@ export function PostDialog({ post, mode, open, onClose, onChanged, onDecide }: P
           </p>
           <h3 className="font-display text-2xl">Review</h3>
         </div>
-        {post.media_url && (
-          <div className="bg-foreground/5">
-            {post.media_type === "video" ? (
+        {mediaUrl && (
+          <div className="relative bg-foreground/5">
+            {mediaType === "video" ? (
               <video
-                src={post.media_url}
+                src={mediaUrl}
                 className="max-h-[40vh] w-full object-contain"
                 controls
                 playsInline
               />
             ) : (
-              <img src={post.media_url} className="max-h-[40vh] w-full object-contain" />
+              <img src={mediaUrl} className="max-h-[40vh] w-full object-contain" />
+            )}
+            {mode === "admin" && (
+              <label className="absolute bottom-2 right-2 cursor-pointer rounded-sm border editorial-rule bg-background/90 px-3 py-1.5 text-xs font-medium shadow hover:bg-background">
+                <input
+                  type="file"
+                  accept="image/*,video/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files?.[0] && replaceMedia(e.target.files[0])}
+                />
+                {busy ? "Uploading…" : "Replace media"}
+              </label>
             )}
           </div>
         )}
