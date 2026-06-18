@@ -27,10 +27,25 @@ export function Media({
   loop?: boolean;
 }) {
   if (!post.media_url) {
-    return <div className={`grid place-items-center bg-foreground/5 text-[10px] text-foreground/30 ${className ?? ""}`}>empty</div>;
+    return (
+      <div
+        className={`grid place-items-center bg-foreground/5 text-[10px] text-foreground/30 ${className ?? ""}`}
+      >
+        empty
+      </div>
+    );
   }
   return isVideo(post) ? (
-    <video src={post.media_url} className={className} muted={muted} controls={controls} autoPlay={autoPlay} loop={loop} playsInline preload="metadata" />
+    <video
+      src={post.media_url}
+      className={className}
+      muted={muted}
+      controls={controls}
+      autoPlay={autoPlay}
+      loop={loop}
+      playsInline
+      preload="metadata"
+    />
   ) : (
     <img src={post.media_url} className={className} alt="" />
   );

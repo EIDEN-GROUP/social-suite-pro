@@ -15,7 +15,8 @@ export const Route = createFileRoute("/_authenticated")({
       user = null;
     }
     if (!user) {
-      if (typeof window !== "undefined") sessionStorage.setItem("post_login_redirect", location.href);
+      if (typeof window !== "undefined")
+        sessionStorage.setItem("post_login_redirect", location.href);
       throw redirect({ to: "/auth" });
     }
 

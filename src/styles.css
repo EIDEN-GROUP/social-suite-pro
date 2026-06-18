@@ -64,10 +64,10 @@
 :root {
   /* Paper & Ink editorial palette */
   --radius: 0.25rem;
-  --paper: oklch(0.965 0.005 85);            /* #f5f3ee */
-  --paper-2: oklch(0.93 0.006 85);           /* #e8e4dd */
-  --ink: oklch(0.16 0 0);                    /* #0d0d0d */
-  --ink-soft: oklch(0.32 0 0);               /* #2d2d2d */
+  --paper: oklch(0.965 0.005 85); /* #f5f3ee */
+  --paper-2: oklch(0.93 0.006 85); /* #e8e4dd */
+  --ink: oklch(0.16 0 0); /* #0d0d0d */
+  --ink-soft: oklch(0.32 0 0); /* #2d2d2d */
   --rule: oklch(0.82 0.008 85);
 
   --background: var(--paper);
@@ -154,33 +154,118 @@
     font-feature-settings: "ss01", "cv11";
   }
 
-  .font-display { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.01em; }
-  .editorial-rule { border-color: var(--rule); }
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 900;
+    letter-spacing: -0.01em;
+  }
+  .editorial-rule {
+    border-color: var(--rule);
+  }
 }
 
 /* ---- Landing page life: gradients + motion ---- */
-@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
-@keyframes floatSlow { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-24px); } }
-@keyframes blob {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(24px, -34px) scale(1.12); }
-  66% { transform: translate(-22px, 22px) scale(0.92); }
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
 }
-@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-@keyframes gradientPan { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-@keyframes spinSlow { to { transform: rotate(360deg); } }
-@keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
-@keyframes risein { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes floatSlow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-24px);
+  }
+}
+@keyframes blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(24px, -34px) scale(1.12);
+  }
+  66% {
+    transform: translate(-22px, 22px) scale(0.92);
+  }
+}
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+@keyframes gradientPan {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+@keyframes spinSlow {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes risein {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 
-.animate-float { animation: float 6s ease-in-out infinite; }
-.animate-float-slow { animation: floatSlow 9s ease-in-out infinite; }
-.animate-blob { animation: blob 20s ease-in-out infinite; }
-.animate-marquee { animation: marquee 34s linear infinite; }
-.animate-spin-slow { animation: spinSlow 26s linear infinite; }
-.animate-pop { animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-.animate-rise { animation: risein 0.7s ease both; }
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+.animate-float-slow {
+  animation: floatSlow 9s ease-in-out infinite;
+}
+.animate-blob {
+  animation: blob 20s ease-in-out infinite;
+}
+.animate-marquee {
+  animation: marquee 34s linear infinite;
+}
+.animate-spin-slow {
+  animation: spinSlow 26s linear infinite;
+}
+.animate-pop {
+  animation: pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.animate-rise {
+  animation: risein 0.7s ease both;
+}
 
-.ig-gradient { background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); }
+.ig-gradient {
+  background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+}
 .text-social-gradient {
   background: linear-gradient(90deg, #f09433, #dc2743, #bc1888, #405de6, #1877f2);
   background-size: 220% auto;
@@ -195,9 +280,48 @@
   -webkit-backdrop-filter: blur(14px);
 }
 
+/* ---- Auth: living gradient aurora ---- */
+@keyframes auroraDrift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate(5%, -6%) scale(1.18) rotate(8deg);
+  }
+  66% {
+    transform: translate(-5%, 5%) scale(0.9) rotate(-6deg);
+  }
+}
+.animate-aurora {
+  animation: auroraDrift 24s ease-in-out infinite;
+}
+/* Fine film grain so the gradient reads as paper, not a screensaver. */
+.grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.4;
+  mix-blend-mode: soft-light;
+}
+/* Frosted "specimen" card that floats over the aurora. */
+.auth-card {
+  background: color-mix(in oklch, var(--card) 60%, transparent);
+  backdrop-filter: blur(26px) saturate(150%);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  box-shadow:
+    0 30px 80px -24px rgba(13, 13, 13, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-float, .animate-float-slow, .animate-blob, .animate-marquee,
-  .animate-spin-slow, .animate-pop, .animate-rise, .text-social-gradient {
+  .animate-aurora,
+  .animate-float,
+  .animate-float-slow,
+  .animate-blob,
+  .animate-marquee,
+  .animate-spin-slow,
+  .animate-pop,
+  .animate-rise,
+  .text-social-gradient {
     animation: none !important;
   }
 }

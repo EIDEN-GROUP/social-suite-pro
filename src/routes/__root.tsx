@@ -79,9 +79,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Atelier - Social Media Approval Studio" },
-      { name: "description", content: "Editorial-grade simulator and approval workflow for client social media campaigns." },
+      {
+        name: "description",
+        content:
+          "Editorial-grade simulator and approval workflow for client social media campaigns.",
+      },
       { property: "og:title", content: "Atelier - Social Media Approval Studio" },
-      { property: "og:description", content: "Editorial-grade simulator and approval workflow for client social media campaigns." },
+      {
+        property: "og:description",
+        content:
+          "Editorial-grade simulator and approval workflow for client social media campaigns.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
