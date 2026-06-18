@@ -54,25 +54,29 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="mx-auto w-full max-w-[340px]">
-      <div className="relative aspect-[9/19.5] overflow-hidden rounded-[42px] border-[10px] border-foreground bg-background shadow-2xl">
-        <div className="absolute left-1/2 top-2 z-20 h-5 w-28 -translate-x-1/2 rounded-full bg-foreground" />
-        <div className="absolute inset-0 overflow-y-auto pb-2 pt-8 text-foreground">
-          {platform === "instagram" && (
-            <Instagram
-              company={company}
-              posts={posts}
-              highlights={highlights}
-              onTap={onTap}
-              onHighlight={setLightbox}
-            />
-          )}
-          {platform === "tiktok" && <TikTok company={company} posts={posts} onTap={onTap} />}
-          {platform === "facebook" && <Facebook company={company} posts={posts} onTap={onTap} />}
-          {platform === "twitter" && <Twitter company={company} posts={posts} onTap={onTap} />}
-          {platform === "linkedin" && <LinkedIn company={company} posts={posts} onTap={onTap} />}
-        </div>
-        {lightbox && (
+    <div
+      ref={frameRef}
+      className="relative mx-auto w-full max-w-[340px]"
+      style={{ filter: "drop-shadow(0 30px 60px rgba(0,0,0,0.3)) drop-shadow(0 10px 20px rgba(0,0,0,0.15))" }}
+    >
+      {/* Outer bezel with realistic metallic gradient */}
+      <div
+        className="relative overflow-hidden"
+        style={{
+          borderRadius: "52px",
+          padding: "12px",
+          background: "linear-gradient(145deg, #3a3a3c, #1c1c1e 40%, #2c2c2e 60%, #3a3a3c)",
+          boxShadow: "inset 0 1px 2px rgba(255,255,255,0.15), inset 0 -1px 2px rgba(0,0,0,0.5)",
+        }}
+      >
+        {/* Inner rim highlight */}
+        <div className="pointer-events-none absolute inset-0 z-30 rounded-[44px] border-2 border-white/10" />
+        {/* Screen area */}
+        <div
+          className="relative overflow-hidden"
+          style={{ borderRadius: "40px", aspectRatio: 9 / 19.5 }}
+        >
+          {/* Dynamic glass glare that follows mouse */}
           <div
             className="absolute inset-0 z-30 flex flex-col bg-black text-white"
             onClick={() => setLightbox(null)}
