@@ -249,6 +249,10 @@
 }
 .animate-blob {
   animation: blob 20s ease-in-out infinite;
+  /* Cache the heavy blur on its own GPU layer; animate the texture, not the blur. */
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 .animate-marquee {
   animation: marquee 34s linear infinite;
@@ -305,6 +309,12 @@
 }
 .animate-aurora {
   animation: auroraDrift 24s ease-in-out infinite;
+  /* Promote each orb to its own GPU layer so the expensive blur is
+     rasterized once and the drift only composites a cached texture,
+     instead of re-running blur(120px) every frame. */
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 /* Fine film grain so the gradient reads as paper, not a screensaver. */
 .grain {
