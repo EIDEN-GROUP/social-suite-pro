@@ -10,8 +10,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in - Atelier" },
-      { name: "description", content: "Sign in to the Atelier approval studio." },
+      { title: "Sign in - SMimulator" },
+      { name: "description", content: "Sign in to the SMimulator approval studio." },
     ],
   }),
   component: AuthPage,
@@ -100,9 +100,9 @@ function AuthPage() {
           className="mb-5 inline-flex items-center gap-2 font-display text-2xl tracking-tight"
         >
           <span className="ig-gradient inline-grid h-8 w-8 place-items-center rounded-xl text-base font-bold text-white shadow-lg">
-            A
+            S
           </span>
-          Atelier
+          SMimulator
         </Link>
 
         <div className="auth-card rounded-[2rem] border border-white/40 p-8 sm:p-10">
@@ -181,7 +181,7 @@ function AuthPage() {
         </div>
 
         <p className="mt-6 text-center text-[11px] text-muted-foreground">
-          © Atelier Studio - where the work is shown, and then approved.
+          © SMimulator Studio - where the work is shown, and then approved.
         </p>
       </div>
     </AuthAura>

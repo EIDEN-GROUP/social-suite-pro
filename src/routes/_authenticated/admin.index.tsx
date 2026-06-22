@@ -83,7 +83,7 @@ function AdminHome() {
     <main className="min-h-screen bg-background">
       <header className="flex items-center justify-between border-b editorial-rule px-6 py-4">
         <Link to="/admin" className="font-display text-xl">
-          Atelier · Studio
+          SMimulator · Studio
         </Link>
         <div className="flex items-center gap-4 text-xs">
           <span className="uppercase tracking-widest text-muted-foreground">Superadmin</span>

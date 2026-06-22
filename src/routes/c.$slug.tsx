@@ -41,7 +41,7 @@ import {
 
 export const Route = createFileRoute("/c/$slug")({
   ssr: false,
-  head: () => ({ meta: [{ title: "For your approval - Atelier" }] }),
+  head: () => ({ meta: [{ title: "For your approval - SMimulator" }] }),
   component: ClientRoom,
 });
 
@@ -194,7 +194,7 @@ function ClientRoom() {
           </div>
 
           <p className="relative z-10 text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
-            Powered by Atelier
+            Powered by eiden-group
           </p>
         </section>
 
