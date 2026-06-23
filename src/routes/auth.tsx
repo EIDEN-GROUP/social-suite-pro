@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { signUpStudioAdmin } from "@/lib/admin.functions";
-import { AuthAura } from "@/components/AuthAura";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { AuroraLayer } from "@/components/AuthAura";
+import { ArrowRight, Sparkles, Check, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import logoUrl from "@/assets/logo.jpg";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -93,19 +94,68 @@ function AuthPage() {
   const isSetup = bootstrapAllowed && mode === "signup";
 
   return (
-    <AuthAura>
-      <div className="animate-rise w-full max-w-md">
-        <Link
-          to="/"
-          className="mb-5 inline-flex items-center gap-2 font-display text-2xl tracking-tight"
-        >
-          <span className="ig-gradient inline-grid h-8 w-8 place-items-center rounded-xl text-base font-bold text-white shadow-lg">
-            S
-          </span>
-          SMimulator
-        </Link>
+    <main className="grid min-h-screen grid-cols-1 bg-background text-foreground lg:grid-cols-[1fr_1.05fr]">
+      {/* LEFT - sticky branded panel (the "something different": editorial aurora rail) */}
+      <aside className="relative hidden overflow-hidden border-r editorial-rule bg-[#0d0d0d] text-white lg:block">
+        <div className="sticky top-0 flex h-screen flex-col justify-between p-12 xl:p-16">
+          <AuroraLayer />
 
-        <div className="auth-card rounded-[2rem] border border-white/40 p-8 sm:p-10">
+          <Link to="/" className="relative z-10 flex items-center gap-3">
+            <img src={logoUrl} alt="SMimulator" className="h-10 w-10 rounded-xl object-cover" />
+            <span className="font-display text-xl tracking-tight">SMimulator</span>
+          </Link>
+
+          <div className="relative z-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-white/70">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Studio control room
+            </span>
+            <h2 className="mt-6 font-display text-5xl leading-[0.95] xl:text-6xl">
+              Run every
+              <br />
+              <span className="text-social-gradient">approval</span> from
+              <br />
+              one place.
+            </h2>
+            <ul className="mt-9 space-y-3.5 text-sm text-white/75">
+              {[
+                "Spin up client proofing rooms in seconds",
+                "Track approvals, comments and revisions live",
+                "Publish-ready mockups for every platform",
+              ].map((line) => (
+                <li key={line} className="flex items-center gap-3">
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-emerald-500/90 text-white">
+                    <Check className="h-3.5 w-3.5" />
+                  </span>
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <p className="relative z-10 text-[11px] uppercase tracking-[0.3em] text-white/40">
+            © SMimulator Studio
+          </p>
+        </div>
+      </aside>
+
+      {/* RIGHT - sign-in form */}
+      <section className="relative flex items-center justify-center overflow-hidden p-6 sm:p-10">
+        {/* Mobile-only aurora wash since the left panel is hidden */}
+        <div className="absolute inset-0 -z-10 opacity-70 lg:hidden">
+          <AuroraLayer />
+        </div>
+
+        <div className="animate-rise w-full max-w-md">
+          {/* Brand header (shows on mobile where the left panel is hidden) */}
+          <Link
+            to="/"
+            className="mb-8 inline-flex items-center gap-2 font-display text-2xl tracking-tight lg:hidden"
+          >
+            <img src={logoUrl} alt="SMimulator" className="h-8 w-8 rounded-xl object-cover" />
+            SMimulator
+          </Link>
+
           <span className="inline-flex items-center gap-1.5 rounded-full border border-foreground/10 bg-background/40 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5" />
             {isSetup ? "Studio setup" : "Studio entry"}
@@ -179,11 +229,7 @@ function AuthPage() {
             </button>
           )}
         </div>
-
-        <p className="mt-6 text-center text-[11px] text-muted-foreground">
-          © SMimulator Studio - where the work is shown, and then approved.
-        </p>
-      </div>
-    </AuthAura>
+      </section>
+    </main>
   );
 }
