@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { PhonePreview } from "@/components/PhonePreview";
 import { Media } from "@/components/Media";
+import logoUrl from "@/assets/logo.jpg";
 import { submitContact } from "@/lib/contact.functions";
 import {
   PLATFORMS,
@@ -173,9 +174,11 @@ function Index() {
       <header className="glass sticky top-0 z-50 border-b editorial-rule">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2 font-display text-2xl tracking-tight">
-            <span className="ig-gradient inline-grid h-7 w-7 place-items-center rounded-lg text-sm font-bold text-white">
-              A
-            </span>
+            <img
+              src={logoUrl}
+              alt="SMimulator"
+              className="h-8 w-8 rounded-lg object-cover"
+            />
             SMimulator
           </div>
           <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
@@ -458,9 +461,17 @@ function Index() {
 
       <footer className="border-t editorial-rule">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-8 text-xs text-muted-foreground sm:flex-row">
-          <span>
-            © {new Date().getFullYear()} SMimulator Studio - Approval workflow for modern agencies.
-          </span>
+          <div className="flex items-center gap-2">
+            <img
+              src={logoUrl}
+              alt="SMimulator"
+              className="h-7 w-7 rounded-lg object-cover"
+            />
+            <span>
+              © {new Date().getFullYear()} SMimulator Studio - Approval workflow for modern
+              agencies.
+            </span>
+          </div>
         </div>
       </footer>
     </main>
