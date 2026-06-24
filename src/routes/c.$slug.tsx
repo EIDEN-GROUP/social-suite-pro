@@ -11,7 +11,6 @@ import {
   type CompanyBranding,
 } from "@/lib/client.functions";
 import { Media } from "@/components/Media";
-import { AuroraLayer } from "@/components/AuthAura";
 import {
   Lock,
   ArrowRight,
@@ -134,128 +133,133 @@ function ClientRoom() {
     const initials = (brandName || slug).slice(0, 2).toUpperCase();
     const BrandMark = ({ size }: { size: string }) => (
       <span
-        className={`grid shrink-0 place-items-center overflow-hidden rounded-2xl text-base font-bold text-white shadow-lg ${size}`}
-        style={{ background: accent || "#0d0d0d" }}
+        className={`grid shrink-0 place-items-center overflow-hidden rounded-2xl text-base font-bold text-white shadow-lg ring-1 ring-black/5 ${size}`}
+        style={{ background: accent || "#1a1208" }}
       >
         {logo ? <img src={logo} alt="" className="h-full w-full object-cover" /> : initials}
       </span>
     );
 
     return (
-      <main className="grid min-h-screen grid-cols-1 bg-background text-foreground lg:grid-cols-[1.05fr_1fr]">
-        {/* LEFT - branded aurora showcase */}
-        <section className="relative hidden flex-col justify-between overflow-hidden border-r editorial-rule p-12 lg:flex xl:p-16">
-          <AuroraLayer accent={accent} />
+      <main className="lunja-auth grid min-h-screen grid-cols-1 lg:grid-cols-[1.05fr_1fr]">
+        {/* LEFT - looping atelier side video: sketching, print proofs, swatches, tabletop */}
+        <section className="relative hidden flex-col justify-between overflow-hidden p-12 text-[#fdf8ee] lg:flex xl:p-16">
+          <AtelierLoop accent={accent} />
+
+          {/* Swiss hairline grid + readability scrim over the loop */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 opacity-[0.16] [background-image:linear-gradient(#fdf8ee_1px,transparent_1px),linear-gradient(90deg,#fdf8ee_1px,transparent_1px)] [background-size:64px_64px]"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1a1208]/90 via-[#1a1208]/45 to-[#1a1208]/25"
+          />
 
           <div className="relative z-10 flex items-center gap-3">
             <BrandMark size="h-11 w-11" />
             <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
-                Approval room
-              </p>
-              <p className="truncate font-display text-xl leading-tight">
-                {brandName || `/${slug}`}
-              </p>
+              <p className="lj-eyebrow text-[10px] uppercase text-[#fdf8ee]/70">Approval room</p>
+              <p className="lj-serif truncate text-xl leading-tight">{brandName || `/${slug}`}</p>
             </div>
           </div>
 
           <div className="relative z-10">
-            <h1 className="font-display text-6xl leading-[0.92] xl:text-7xl">
+            <span className="lj-eyebrow inline-flex items-center gap-2 rounded-full border border-[#fdf8ee]/25 bg-[#1a1208]/30 px-3 py-1 text-[10px] uppercase text-[#fdf8ee]/85 backdrop-blur-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#f96635]" />
+              The studio, in session
+            </span>
+            <h1 className="lj-serif mt-6 text-6xl leading-[0.95] xl:text-7xl">
               Your work,
               <br />
-              <span className="text-social-gradient">ready for review.</span>
+              <span className="lj-gradient italic">ready for review.</span>
             </h1>
-            <p className="mt-5 max-w-md text-base text-muted-foreground">
+            <p className="mt-5 max-w-md text-base text-[#fdf8ee]/80">
               Swipe through every post, reel and story in true-to-life mockups - then approve or
               request changes in a single tap.
             </p>
 
-            {/* Floating decision chips */}
+            {/* Decision chips as translucent glass modules */}
             <div className="mt-9 flex flex-wrap gap-3">
-              <span className="auth-card flex items-center gap-2 rounded-2xl border border-white/40 px-3.5 py-2.5">
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-emerald-500 text-white">
+              <span className="lj-glass flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 text-[#1a1208]">
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-[#2bbaa5] text-white">
                   <Check className="h-4 w-4" />
                 </span>
                 <span className="text-xs">
                   <span className="block font-semibold">Approved</span>
-                  <span className="text-muted-foreground">Reel · just now</span>
+                  <span className="text-[#3d2c1e]/70">Reel · just now</span>
                 </span>
               </span>
-              <span className="auth-card flex items-center gap-2 rounded-2xl border border-white/40 px-3.5 py-2.5">
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-rose-500 text-white">
+              <span className="lj-glass flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 text-[#1a1208]">
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-[#f96635] text-white">
                   <MessageCircle className="h-4 w-4" />
                 </span>
                 <span className="text-xs">
                   <span className="block font-semibold">“Brighten the logo?”</span>
-                  <span className="text-muted-foreground">Your comment</span>
+                  <span className="text-[#3d2c1e]/70">Your comment</span>
                 </span>
               </span>
             </div>
           </div>
 
-          <p className="relative z-10 text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
+          <p className="lj-eyebrow relative z-10 text-[10px] uppercase text-[#fdf8ee]/55">
             Powered by eiden-group
           </p>
         </section>
 
-        {/* RIGHT - sign-in form */}
-        <section className="relative flex items-center justify-center overflow-hidden p-6 sm:p-10">
-          {/* Mobile-only aurora wash since the left panel is hidden */}
-          <div className="absolute inset-0 -z-10 opacity-70 lg:hidden">
-            <AuroraLayer accent={accent} />
-          </div>
+        {/* RIGHT - sign-in form on warm paper with a shifting Mondrian grid */}
+        <section className="relative flex items-center justify-center overflow-hidden bg-[#fdf8ee] p-6 sm:p-10">
+          <MondrianGrid accent={accent} />
 
-          <div className="animate-rise w-full max-w-sm">
+          <div className="lj-glass animate-rise relative z-10 w-full max-w-sm rounded-[28px] p-7 sm:p-9">
             {/* Brand header (shows on mobile where the left panel is hidden) */}
-            <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <div className="mb-7 flex items-center gap-3 lg:hidden">
               <BrandMark size="h-12 w-12" />
               <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
-                  Approval room
-                </p>
-                <p className="truncate font-display text-xl leading-tight">
-                  {brandName || `/${slug}`}
-                </p>
+                <p className="lj-eyebrow text-[10px] uppercase text-[#3d2c1e]/70">Approval room</p>
+                <p className="lj-serif truncate text-xl leading-tight">{brandName || `/${slug}`}</p>
               </div>
             </div>
 
-            <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">Welcome</p>
-            <h2 className="mt-2 font-display text-4xl leading-tight">Enter your workspace</h2>
-            <p className="mt-3 text-sm text-muted-foreground">
+            <p className="lj-eyebrow text-[10px] uppercase text-[#3d2c1e]/65">Welcome</p>
+            <h2 className="lj-serif mt-2 text-4xl leading-tight text-[#1a1208]">
+              Enter your workspace
+            </h2>
+            <p className="mt-3 text-sm text-[#3d2c1e]/80">
               {brandName ? (
                 <>
                   Use the password your studio shared to open the{" "}
-                  <strong className="text-foreground">{brandName}</strong> room.
+                  <strong className="font-semibold text-[#1a1208]">{brandName}</strong> room.
                 </>
               ) : (
                 <>
                   Your studio shared a password for{" "}
-                  <strong className="text-foreground">/{slug}</strong>.
+                  <strong className="font-semibold text-[#1a1208]">/{slug}</strong>.
                 </>
               )}
             </p>
 
             <form onSubmit={handleLogin} className="mt-8">
-              <label className="block">
-                <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              <label className="lj-module block rounded-2xl px-4 py-3">
+                <span className="lj-eyebrow text-[10px] uppercase text-[#3d2c1e]/65">
                   Workspace password
                 </span>
-                <div className="relative mt-1.5">
-                  <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <div className="relative mt-1">
+                  <Lock className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[#3d2c1e]/55" />
                   <input
                     type="password"
                     autoFocus
                     value={pw}
                     onChange={(e) => setPw(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full rounded-xl border border-foreground/15 bg-card/60 py-3 pl-11 pr-4 text-base outline-none transition focus:border-foreground/40 focus:bg-card focus:ring-4 focus:ring-foreground/5"
+                    className="w-full bg-transparent py-1 pl-7 text-base text-[#1a1208] outline-none placeholder:text-[#3d2c1e]/35"
                   />
                 </div>
               </label>
               <button
                 disabled={submitting || !pw}
-                className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-white transition hover:scale-[1.02] active:scale-100 disabled:opacity-50"
-                style={{ background: accent || "#0d0d0d" }}
+                className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-white shadow-lg shadow-[#1a1208]/15 transition hover:scale-[1.02] active:scale-100 disabled:opacity-50"
+                style={{ background: accent || "#1a1208" }}
               >
                 {submitting ? "…" : "Enter the room"}
                 {!submitting && (
@@ -264,7 +268,7 @@ function ClientRoom() {
               </button>
             </form>
 
-            <p className="mt-8 text-[11px] text-muted-foreground">
+            <p className="lj-eyebrow mt-8 text-[10px] uppercase text-[#3d2c1e]/55">
               Reviewed in seconds - no account needed.
             </p>
           </div>
@@ -284,6 +288,157 @@ function ClientRoom() {
         await refresh();
       }}
     />
+  );
+}
+
+/**
+ * Looping "side video" for the client login - an atelier montage that
+ * cross-fades through four scenes (colour swatches, a print proof, a contour
+ * sketch and a tabletop). It is built entirely from brand-coloured markup so it
+ * always renders; if a studio drops an `/atelier-loop.mp4` into the public
+ * folder it plays on top, otherwise the montage shows through.
+ */
+function AtelierLoop({ accent }: { accent?: string }) {
+  const pop = accent || "#f96635";
+  return (
+    <div aria-hidden className="absolute inset-0 overflow-hidden bg-[#3d2c1e]">
+      {/* Scene 1 - colour swatches */}
+      <div className="lj-scene" style={{ animationDelay: "0s" }}>
+        <div className="lj-ken grid h-full w-full grid-cols-4 grid-rows-3 gap-2 bg-[#1a1208] p-2">
+          {[
+            "#f96635",
+            "#f9a822",
+            "#2bbaa5",
+            "#faecb6",
+            "#93d3ae",
+            "#eee0c0",
+            "#fdf8ee",
+            pop,
+            "#3d2c1e",
+            "#2bbaa5",
+            "#f96635",
+            "#f9a822",
+          ].map((c, i) => (
+            <span
+              key={i}
+              className="rounded-md"
+              style={{ background: c, boxShadow: "inset 0 1px 0 rgba(255,255,255,.25)" }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Scene 2 - print proof sheet */}
+      <div className="lj-scene" style={{ animationDelay: "8s" }}>
+        <div className="lj-ken grid h-full w-full place-items-center bg-[#3d2c1e] p-10">
+          <div className="relative w-full max-w-md rounded-sm bg-[#fdf8ee] p-7 shadow-2xl">
+            {["8%", "8%", "92%", "92%"].map((_, i) => (
+              <span
+                key={i}
+                className="absolute h-4 w-4 text-[#3d2c1e]/40"
+                style={{
+                  top: i < 2 ? "10px" : "auto",
+                  bottom: i >= 2 ? "10px" : "auto",
+                  left: i % 2 === 0 ? "10px" : "auto",
+                  right: i % 2 === 1 ? "10px" : "auto",
+                }}
+              >
+                <PlusSquare className="h-4 w-4" />
+              </span>
+            ))}
+            <div className="h-3 w-2/3 rounded-full bg-[#f96635]" />
+            <div className="mt-3 h-2 w-full rounded-full bg-[#3d2c1e]/15" />
+            <div className="mt-2 h-2 w-11/12 rounded-full bg-[#3d2c1e]/15" />
+            <div className="mt-2 h-2 w-4/5 rounded-full bg-[#3d2c1e]/15" />
+            <div className="mt-6 flex gap-1.5">
+              {["#22d3ee", "#f472b6", "#facc15", "#1a1208"].map((c) => (
+                <span key={c} className="h-6 flex-1 rounded-sm" style={{ background: c }} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Scene 3 - contour sketch */}
+      <div className="lj-scene" style={{ animationDelay: "16s" }}>
+        <div className="lj-ken grid h-full w-full place-items-center bg-[#1a1208]">
+          <svg viewBox="0 0 200 200" className="h-3/4 w-3/4" fill="none">
+            {[
+              "M40 150 C40 80 90 40 130 60 S170 140 120 160 S50 170 40 150 Z",
+              "M70 120 C70 95 95 85 110 95 S125 130 100 135 S70 135 70 120 Z",
+              "M95 70 L150 50 M150 50 L145 95 M150 50 L120 40",
+            ].map((d, i) => (
+              <path
+                key={i}
+                d={d}
+                stroke={i === 2 ? pop : "#fdf8ee"}
+                strokeWidth={i === 2 ? 2 : 1.5}
+                strokeLinecap="round"
+                strokeDasharray="600"
+                strokeDashoffset="600"
+                style={{ animation: `ljStroke 5s ease ${i * 0.6}s forwards` }}
+                opacity={0.85}
+              />
+            ))}
+          </svg>
+        </div>
+      </div>
+
+      {/* Scene 4 - tabletop */}
+      <div className="lj-scene" style={{ animationDelay: "24s" }}>
+        <div className="lj-ken relative h-full w-full overflow-hidden bg-[#eee0c0]">
+          <span className="absolute left-[12%] top-[20%] h-40 w-40 rounded-full bg-[#2bbaa5]/80 blur-[1px]" />
+          <span className="absolute left-[34%] top-[34%] h-44 w-44 rounded-full bg-[#f9a822]/80" />
+          <span className="absolute left-[52%] top-[24%] h-36 w-36 rounded-full bg-[#f96635]/85" />
+          <span
+            className="absolute bottom-[18%] left-[20%] h-3 w-56 -rotate-12 rounded-full"
+            style={{ background: "linear-gradient(90deg,#3d2c1e,#3d2c1e 70%,#faecb6 70%)" }}
+          />
+          <span className="absolute bottom-[26%] right-[16%] h-28 w-40 rotate-6 rounded-md bg-[#fdf8ee] shadow-xl" />
+        </div>
+      </div>
+
+      {/* Optional real footage layered on top of the montage */}
+      <video
+        className="absolute inset-0 z-[1] h-full w-full object-cover"
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="none"
+      >
+        <source src="/atelier-loop.mp4" type="video/mp4" />
+      </video>
+    </div>
+  );
+}
+
+/**
+ * A Mondrian-inspired backdrop for the form side: modular colour blocks held in
+ * a thick-ruled grid that quietly re-composes itself behind the glass card.
+ */
+function MondrianGrid({ accent }: { accent?: string }) {
+  const pop = accent || "#f96635";
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden opacity-[0.9]">
+      <div className="lj-grid absolute inset-0">
+        <span className="lj-bv absolute left-0 top-0 h-[42%] w-[26%] bg-[#faecb6]" />
+        <span
+          className="lj-bh absolute right-0 top-0 h-[34%] w-[34%]"
+          style={{ background: pop, opacity: 0.85 }}
+        />
+        <span className="absolute bottom-0 left-0 h-[40%] w-[20%] bg-[#2bbaa5]/80" />
+        <span className="lj-bv absolute bottom-0 right-[24%] h-[30%] w-[16%] bg-[#f9a822]/85" />
+        <span className="absolute bottom-0 right-0 h-[24%] w-[24%] bg-[#93d3ae]/70" />
+        {/* thick Mondrian rules */}
+        <span className="absolute left-[26%] top-0 h-full w-[6px] bg-[#1a1208]" />
+        <span className="absolute right-[24%] top-0 h-full w-[6px] bg-[#1a1208]" />
+        <span className="absolute left-0 top-[42%] h-[6px] w-full bg-[#1a1208]" />
+        <span className="absolute left-0 bottom-[24%] h-[6px] w-full bg-[#1a1208]" />
+      </div>
+      {/* paper wash so the card and copy stay legible */}
+      <div className="absolute inset-0 bg-[#fdf8ee]/82" />
+    </div>
   );
 }
 

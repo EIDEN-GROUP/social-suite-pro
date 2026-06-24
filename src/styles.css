@@ -332,6 +332,152 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
+/* ============================================================
+   Lunja client login — atelier loop + Swiss/Mondrian grid
+   A self-contained, warm "design practice" identity for the
+   client approval room. Scoped under `.lunja-auth` so none of
+   it leaks into the rest of the app.
+   ============================================================ */
+.lunja-auth {
+  --lj-warm: #fffdf7;
+  --lj-cream: #fdf8ee;
+  --lj-vanilla: #faecb6;
+  --lj-sand: #eee0c0;
+  --lj-mud: #3d2c1e;
+  --lj-ink: #1a1208;
+  --lj-keppel: #2bbaa5;
+  --lj-celadon: #93d3ae;
+  --lj-coral: #f96635;
+  --lj-amber: #f9a822;
+
+  background: var(--lj-cream);
+  color: var(--lj-ink);
+  font-family: "DM Sans", "Inter", sans-serif;
+}
+.lj-serif {
+  font-family: "Lora", Georgia, "Times New Roman", serif;
+}
+.lj-eyebrow {
+  font-family: "DM Sans", sans-serif;
+  letter-spacing: 0.32em;
+}
+.lj-gradient {
+  background: linear-gradient(95deg, var(--lj-coral), var(--lj-amber) 45%, var(--lj-keppel));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---- Mondrian backdrop that quietly re-composes itself ---- */
+@keyframes ljGridDrift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -1.4%, 0);
+  }
+}
+@keyframes ljBlockH {
+  0%,
+  100% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(0.82);
+  }
+}
+@keyframes ljBlockV {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.16);
+  }
+}
+.lj-grid {
+  animation: ljGridDrift 18s ease-in-out infinite;
+  will-change: transform;
+}
+.lj-grid > span {
+  transform-origin: center;
+  will-change: transform;
+}
+.lj-grid .lj-bh {
+  animation: ljBlockH 16s ease-in-out infinite;
+}
+.lj-grid .lj-bv {
+  animation: ljBlockV 20s ease-in-out infinite;
+}
+
+/* ---- Atelier loop: cross-fading scenes behind / under a video ---- */
+@keyframes ljScene {
+  0%,
+  16% {
+    opacity: 1;
+  }
+  25%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes ljKen {
+  0% {
+    transform: scale(1.05) translate(0, 0);
+  }
+  100% {
+    transform: scale(1.16) translate(-2%, -2%);
+  }
+}
+@keyframes ljSwatch {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8%);
+  }
+}
+@keyframes ljStroke {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.lj-scene {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  animation: ljScene 32s ease-in-out infinite;
+}
+.lj-ken {
+  animation: ljKen 16s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* ---- Frosted "specimen" surfaces on warm paper ---- */
+.lj-glass {
+  background: color-mix(in srgb, var(--lj-warm) 64%, transparent);
+  backdrop-filter: blur(30px) saturate(140%);
+  -webkit-backdrop-filter: blur(30px) saturate(140%);
+  box-shadow:
+    0 44px 100px -34px rgba(26, 18, 8, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+.lj-module {
+  background: color-mix(in srgb, var(--lj-warm) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--lj-mud) 14%, transparent);
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.lj-module:focus-within {
+  border-color: color-mix(in srgb, var(--lj-keppel) 70%, transparent);
+  background: color-mix(in srgb, var(--lj-warm) 78%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lj-keppel) 16%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-aurora,
   .animate-float,
@@ -341,7 +487,15 @@
   .animate-spin-slow,
   .animate-pop,
   .animate-rise,
-  .text-social-gradient {
+  .text-social-gradient,
+  .lj-grid,
+  .lj-grid .lj-bh,
+  .lj-grid .lj-bv,
+  .lj-scene,
+  .lj-ken {
     animation: none !important;
+  }
+  .lj-scene:first-of-type {
+    opacity: 1;
   }
 }
