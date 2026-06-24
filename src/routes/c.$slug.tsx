@@ -11,6 +11,7 @@ import {
   type CompanyBranding,
 } from "@/lib/client.functions";
 import { Media } from "@/components/Media";
+import lunjaWordmark from "@/assets/lunja-wordmark-white.png";
 import {
   Lock,
   ArrowRight,
@@ -202,9 +203,13 @@ function ClientRoom() {
             </div>
           </div>
 
-          <p className="lj-eyebrow relative z-10 text-[10px] uppercase text-[#fdf8ee]/55">
-            Powered by eiden-group
-          </p>
+          <div className="relative z-10 flex items-center gap-3">
+            <img src={lunjaWordmark} alt="Lunja" className="h-6 w-auto opacity-90" />
+            <span className="h-4 w-px bg-[#fdf8ee]/25" />
+            <p className="lj-eyebrow text-[10px] uppercase text-[#fdf8ee]/55">
+              Powered by eiden-group
+            </p>
+          </div>
         </section>
 
         {/* RIGHT - sign-in form on warm paper with a shifting Mondrian grid */}
