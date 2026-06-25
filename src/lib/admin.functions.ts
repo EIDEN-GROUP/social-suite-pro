@@ -52,3 +52,57 @@ export const signUpStudioAdmin = createServerFn({ method: "POST" })
 
     return { user_id: created.user.id };
   });
+
+export const createSuperadmin = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        email: z.string().email().max(255),
+        password: z.string().min(8).max(128),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Check if a user with this email already exists
+    const { data: users } = await supabaseAdmin.auth.admin.listUsers();
+    const existing = users?.users.find((u) => u.email === data.email);
+
+    if (existing) {
+      // User exists — just ensure the superadmin role is present
+      const { data: hasRole } = await supabaseAdmin
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", existing.id)
+        .eq("role", "superadmin")
+        .maybeSingle();
+      if (hasRole) throw new Error("This user is already a superadmin.");
+
+      const { error: roleErr } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: existing.id, role: "superadmin" });
+      if (roleErr) throw new Error(roleErr.message);
+
+      return { user_id: existing.id, created: false };
+    }
+
+    // Create new user
+    const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+      email: data.email,
+      password: data.password,
+      email_confirm: true,
+    });
+    if (createErr || !created?.user)
+      throw new Error(createErr?.message ?? "Failed to create user");
+
+    const { error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: created.user.id, role: "superadmin" });
+    if (roleErr) {
+      await supabaseAdmin.auth.admin.deleteUser(created.user.id);
+      throw new Error(roleErr.message);
+    }
+
+    return { user_id: created.user.id, created: true };
+  });

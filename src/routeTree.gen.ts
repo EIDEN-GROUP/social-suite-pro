@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedAdminSuperadminsRouteImport } from './routes/_authenticated/admin.superadmins'
 import { Route as AuthenticatedAdminCompaniesSlugRouteImport } from './routes/_authenticated/admin.companies.$slug'
 
 const AuthRoute = AuthRouteImport.update({
@@ -46,6 +47,12 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminSuperadminsRoute =
+  AuthenticatedAdminSuperadminsRouteImport.update({
+    id: '/superadmins',
+    path: '/superadmins',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminCompaniesSlugRoute =
   AuthenticatedAdminCompaniesSlugRouteImport.update({
     id: '/companies/$slug',
@@ -58,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/c/$slug': typeof CSlugRoute
+  '/admin/superadmins': typeof AuthenticatedAdminSuperadminsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/companies/$slug': typeof AuthenticatedAdminCompaniesSlugRoute
 }
@@ -65,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/c/$slug': typeof CSlugRoute
+  '/admin/superadmins': typeof AuthenticatedAdminSuperadminsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/companies/$slug': typeof AuthenticatedAdminCompaniesSlugRoute
 }
@@ -75,6 +84,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/c/$slug': typeof CSlugRoute
+  '/_authenticated/admin/superadmins': typeof AuthenticatedAdminSuperadminsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/companies/$slug': typeof AuthenticatedAdminCompaniesSlugRoute
 }
@@ -85,10 +95,17 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/c/$slug'
+    | '/admin/superadmins'
     | '/admin/'
     | '/admin/companies/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/c/$slug' | '/admin' | '/admin/companies/$slug'
+  to:
+    | '/'
+    | '/auth'
+    | '/c/$slug'
+    | '/admin/superadmins'
+    | '/admin'
+    | '/admin/companies/$slug'
   id:
     | '__root__'
     | '/'
@@ -96,6 +113,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/admin'
     | '/c/$slug'
+    | '/_authenticated/admin/superadmins'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/companies/$slug'
   fileRoutesById: FileRoutesById
@@ -151,6 +169,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/superadmins': {
+      id: '/_authenticated/admin/superadmins'
+      path: '/superadmins'
+      fullPath: '/admin/superadmins'
+      preLoaderRoute: typeof AuthenticatedAdminSuperadminsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/companies/$slug': {
       id: '/_authenticated/admin/companies/$slug'
       path: '/companies/$slug'
@@ -162,11 +187,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminSuperadminsRoute: typeof AuthenticatedAdminSuperadminsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminCompaniesSlugRoute: typeof AuthenticatedAdminCompaniesSlugRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminSuperadminsRoute: AuthenticatedAdminSuperadminsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminCompaniesSlugRoute: AuthenticatedAdminCompaniesSlugRoute,
 }

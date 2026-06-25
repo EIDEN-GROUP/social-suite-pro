@@ -86,7 +86,12 @@ function AdminHome() {
           SMimulator · Studio
         </Link>
         <div className="flex items-center gap-4 text-xs">
-          <span className="uppercase tracking-widest text-muted-foreground">Superadmin</span>
+          <Link
+            to="/admin/superadmins"
+            className="uppercase tracking-widest text-muted-foreground hover:text-foreground"
+          >
+            Manage admins
+          </Link>
           <button onClick={signOut} className="rounded-sm border editorial-rule px-3 py-1.5">
             Sign out
           </button>
