@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_authenticated/admin/superadmins")({
 
 function SuperadminsPage() {
   const navigate = useNavigate();
-  const [users, setUsers] = useState<{ id: string; email: string; created_at: string }[]>([]);
+  const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,20 +28,11 @@ function SuperadminsPage() {
       return navigate({ to: "/auth" });
     }
 
-    const { data: userRoles } = await supabase
+    const { count: total } = await supabase
       .from("user_roles")
-      .select("user_id, created_at")
-      .eq("role", "superadmin")
-      .order("created_at", { ascending: false });
-
-    const userIds = (userRoles ?? []).map((r) => r.user_id);
-    setUsers(
-      userIds.map((id) => ({
-        id,
-        email: "…",
-        created_at: (userRoles ?? []).find((r) => r.user_id === id)?.created_at ?? "",
-      })),
-    );
+      .select("*", { count: "exact", head: true })
+      .eq("role", "superadmin");
+    setCount(total ?? 0);
     setLoading(false);
   }
 
@@ -137,16 +128,10 @@ function SuperadminsPage() {
           </p>
           {loading ? (
             <p className="mt-4 text-sm text-muted-foreground">Loading…</p>
-          ) : users.length === 0 ? (
-            <p className="mt-4 text-sm text-muted-foreground">No superadmins found.</p>
           ) : (
-            <ul className="mt-4 divide-y editorial-rule border-y editorial-rule">
-              {users.map((u) => (
-                <li key={u.id} className="flex items-center justify-between py-4">
-                  <span className="text-sm">{u.id}</span>
-                </li>
-              ))}
-            </ul>
+            <p className="mt-4 text-sm text-muted-foreground">
+              {count} superadmin{count !== 1 ? "s" : ""} registered.
+            </p>
           )}
         </div>
       </div>
