@@ -355,6 +355,50 @@ function StudioLogin({ slug, branding, pw, setPw, submitting, onSubmit }: LoginP
 
   return (
     <main className="studio-auth grid min-h-screen grid-cols-1 lg:grid-cols-[1.1fr_1fr]">
+      {/* MOBILE HERO — a compact branded stage with a live phone, shown only on
+          small screens where the full left stage is hidden. */}
+      <section className="relative overflow-hidden bg-[#2e1d3f] px-6 pb-7 pt-10 text-white lg:hidden">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -left-16 -top-20 h-64 w-64 rounded-full opacity-70"
+          style={{ background: `radial-gradient(circle at 50% 50%, ${accent}, ${accent}00 70%)` }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.05] [background-image:radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]"
+        />
+        <div className="relative z-10 flex items-center gap-3">
+          <span
+            className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl text-base font-bold text-white ring-1 ring-white/15"
+            style={{ background: logo ? "rgba(255,255,255,0.1)" : accent }}
+          >
+            {logo ? <img src={logo} alt="" className="h-full w-full object-cover" /> : initials}
+          </span>
+          <div className="min-w-0">
+            <p className="lj-serif truncate text-xl leading-tight">{brandName}</p>
+            <p className="text-xs text-white/60">The approval room</p>
+          </div>
+        </div>
+        <h2 className="lj-serif relative z-10 mt-5 text-3xl leading-[1.08]">
+          Your content, <span style={{ color: accent }}>ready to review.</span>
+        </h2>
+        <div className="relative z-10 mx-auto mt-6 h-44 w-[232px] overflow-hidden">
+          <div className="studio-float">
+            <PhoneFrame w={232} h={420}>
+              <FeedScreen accent={accent} brandName={brandName} logo={logo} initials={initials} />
+            </PhoneFrame>
+          </div>
+          {/* fade the clipped bottom into the stage */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#2e1d3f] to-transparent" />
+          <div className="studio-pop absolute right-1 top-3 flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold text-[#1f142e] shadow-lg">
+            <span className="grid h-4 w-4 place-items-center rounded-full bg-[#16b981] text-white">
+              <Check className="h-3 w-3" />
+            </span>
+            Approved
+          </div>
+        </div>
+      </section>
+
       {/* LEFT — deep-aubergine brand stage with the live demo phone */}
       <section className="relative hidden flex-col justify-between overflow-hidden bg-[#2e1d3f] p-10 text-white lg:flex xl:p-14">
         {/* layered accent glows (transform/opacity only — no animated blur) */}
@@ -412,17 +456,6 @@ function StudioLogin({ slug, branding, pw, setPw, submitting, onSubmit }: LoginP
       {/* RIGHT — sign-in panel */}
       <section className="relative flex flex-col justify-center p-8 sm:p-12 lg:p-16">
         <div className="mx-auto w-full max-w-sm">
-          {/* Brand header for mobile, where the left stage is hidden */}
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <span
-              className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl text-base font-bold text-white"
-              style={{ background: accent }}
-            >
-              {logo ? <img src={logo} alt="" className="h-full w-full object-cover" /> : initials}
-            </span>
-            <p className="lj-serif truncate text-xl leading-tight text-[#1f142e]">{brandName}</p>
-          </div>
-
           <span
             className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide"
             style={{ background: `${accent}1a`, color: accent }}
@@ -589,8 +622,6 @@ function StudioDemo({
     </span>
   );
 
-  const reel = [...STUDIO_REEL, ...STUDIO_REEL]; // doubled → seamless loop
-
   return (
     <div ref={stageRef} className="relative z-10 flex-1">
       <div className="relative mx-auto h-[540px] w-full max-w-xl">
@@ -690,73 +721,7 @@ function StudioDemo({
         >
           <div className="studio-floatinner">
             <PhoneFrame w={288} h={540}>
-              <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between border-b border-[#efeaf4] bg-white/95 px-4 pb-2.5 pt-8">
-                <div className="flex items-center gap-2 text-sm font-bold text-[#1f142e]">
-                  <Avatar className="h-6 w-6 text-[10px]" />
-                  <span className="max-w-[8rem] truncate">{brandName}</span>
-                </div>
-                <Heart className="h-[18px] w-[18px] text-[#1f142e]" />
-              </div>
-
-              <div className="absolute inset-x-0 bottom-0 top-[56px] overflow-hidden">
-                <div className="studio-reel">
-                  {reel.map((p, i) => (
-                    <article key={i} className="px-3.5 pb-4">
-                      <div className="flex items-center gap-2.5 py-2.5">
-                        <Avatar className="h-8 w-8 text-[11px]" />
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-xs font-bold text-[#1f142e]">
-                            {brandName}
-                          </div>
-                          <div className="text-[10px] text-[#9a8fa6]">{p.tag}</div>
-                        </div>
-                        <span
-                          className="rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
-                          style={
-                            p.status === "approved"
-                              ? { background: "#16b98122", color: "#0f9d6f" }
-                              : { background: `${accent}1f`, color: accent }
-                          }
-                        >
-                          {p.status === "approved" ? "Approved" : "Review"}
-                        </span>
-                      </div>
-                      <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[#efeaf4]">
-                        <img
-                          src={p.img}
-                          alt=""
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                        />
-                        {p.status === "approved" && (
-                          <span className="studio-stamp absolute right-3.5 top-3.5 rounded-lg border-2 border-white/90 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-white">
-                            Approved
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-2.5 flex items-center gap-3.5 text-[#1f142e]">
-                        <Heart className="h-[18px] w-[18px]" />
-                        <MessageCircle className="h-[18px] w-[18px]" />
-                        <Send className="h-[18px] w-[18px]" />
-                      </div>
-                      <div className="mt-1 text-[11px] font-bold text-[#1f142e]">
-                        {p.likes} likes
-                      </div>
-                      <div className="text-[11px] text-[#6b5f78]">
-                        <b className="text-[#1f142e]">{brandName}</b> {p.caption}
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </div>
-
-              <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-around border-t border-[#efeaf4] bg-white/95 py-3">
-                <Home className="h-[18px] w-[18px] text-[#1f142e]" />
-                <Search className="h-[18px] w-[18px] text-[#9a8fa6]" />
-                <PlusSquare className="h-[18px] w-[18px] text-[#9a8fa6]" />
-                <Film className="h-[18px] w-[18px] text-[#9a8fa6]" />
-                <Avatar className="h-[22px] w-[22px] text-[9px]" />
-              </div>
+              <FeedScreen accent={accent} brandName={brandName} logo={logo} initials={initials} />
             </PhoneFrame>
           </div>
         </div>
@@ -835,6 +800,93 @@ function PhoneFrame({ w, h, children }: { w: number; h: number; children: React.
         {children}
       </div>
     </div>
+  );
+}
+
+/** The live Instagram-style feed screen — reused by the desktop composition and
+ * the mobile hero so both stay in sync. */
+function FeedScreen({
+  accent,
+  brandName,
+  logo,
+  initials,
+}: {
+  accent: string;
+  brandName: string;
+  logo: string | null;
+  initials: string;
+}) {
+  const Avatar = ({ className }: { className: string }) => (
+    <span
+      className={`grid shrink-0 place-items-center overflow-hidden rounded-full font-bold text-white ${className}`}
+      style={{ background: accent }}
+    >
+      {logo ? <img src={logo} alt="" className="h-full w-full object-cover" /> : initials}
+    </span>
+  );
+  const reel = [...STUDIO_REEL, ...STUDIO_REEL]; // doubled → seamless loop
+
+  return (
+    <>
+      <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between border-b border-[#efeaf4] bg-white/95 px-4 pb-2.5 pt-8">
+        <div className="flex items-center gap-2 text-sm font-bold text-[#1f142e]">
+          <Avatar className="h-6 w-6 text-[10px]" />
+          <span className="max-w-[8rem] truncate">{brandName}</span>
+        </div>
+        <Heart className="h-[18px] w-[18px] text-[#1f142e]" />
+      </div>
+
+      <div className="absolute inset-x-0 bottom-0 top-[56px] overflow-hidden">
+        <div className="studio-reel">
+          {reel.map((p, i) => (
+            <article key={i} className="px-3.5 pb-4">
+              <div className="flex items-center gap-2.5 py-2.5">
+                <Avatar className="h-8 w-8 text-[11px]" />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-xs font-bold text-[#1f142e]">{brandName}</div>
+                  <div className="text-[10px] text-[#9a8fa6]">{p.tag}</div>
+                </div>
+                <span
+                  className="rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                  style={
+                    p.status === "approved"
+                      ? { background: "#16b98122", color: "#0f9d6f" }
+                      : { background: `${accent}1f`, color: accent }
+                  }
+                >
+                  {p.status === "approved" ? "Approved" : "Review"}
+                </span>
+              </div>
+              <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[#efeaf4]">
+                <img src={p.img} alt="" className="h-full w-full object-cover" loading="lazy" />
+                {p.status === "approved" && (
+                  <span className="studio-stamp absolute right-3.5 top-3.5 rounded-lg border-2 border-white/90 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-white">
+                    Approved
+                  </span>
+                )}
+              </div>
+              <div className="mt-2.5 flex items-center gap-3.5 text-[#1f142e]">
+                <Heart className="h-[18px] w-[18px]" />
+                <MessageCircle className="h-[18px] w-[18px]" />
+                <Send className="h-[18px] w-[18px]" />
+              </div>
+              <div className="mt-1 text-[11px] font-bold text-[#1f142e]">{p.likes} likes</div>
+              <div className="text-[11px] text-[#6b5f78]">
+                <b className="text-[#1f142e]">{brandName}</b> {p.caption}
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-around border-t border-[#efeaf4] bg-white/95 py-3">
+        <Home className="h-[18px] w-[18px] text-[#1f142e]" />
+        <Search className="h-[18px] w-[18px] text-[#9a8fa6]" />
+        <PlusSquare className="h-[18px] w-[18px] text-[#9a8fa6]" />
+        <Film className="h-[18px] w-[18px] text-[#9a8fa6]" />
+        <Avatar className="h-[22px] w-[22px] text-[9px]" />
+      </div>
+    </>
   );
 }
 
