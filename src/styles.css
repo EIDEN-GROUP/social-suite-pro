@@ -478,6 +478,138 @@
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--lj-keppel) 16%, transparent);
 }
 
+/* ============================================================
+   Studio client login — shared split-screen sign-in used by
+   every non-Lunja company. Scoped under `.studio-auth`.
+   ============================================================ */
+.studio-auth {
+  background: #f2f0f6;
+  font-family: "DM Sans", "Inter", sans-serif;
+}
+.studio-field {
+  border: 1px solid transparent;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.studio-field:focus-within {
+  border-color: color-mix(in srgb, #3a2748 22%, transparent);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(58, 39, 72, 0.08);
+}
+@keyframes studioFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+.studio-float {
+  animation: studioFloat 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Floating phone in the composition: depth position + cursor parallax.
+   The wrapper carries rotation/scale/parallax; the inner element bobs, so the
+   two transforms never fight each other. */
+.studio-pw {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(calc(-50% + var(--px, 0px)), calc(-50% + var(--py, 0px)))
+    rotate(var(--rot, 0deg)) scale(var(--sc, 1));
+  transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.3, 1);
+  will-change: transform;
+}
+.studio-floatinner {
+  animation: studioFloat var(--fdur, 7s) ease-in-out var(--fdelay, 0s) infinite;
+  will-change: transform;
+}
+
+/* Auto-scrolling feed inside the demo phone (list is doubled → -50% loops). */
+@keyframes studioReel {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
+.studio-reel {
+  animation: studioReel 26s linear infinite;
+  will-change: transform;
+}
+
+/* Floating review stickers: pop in once, then bob gently forever. */
+@keyframes studioPopIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) translateY(10px);
+  }
+  60% {
+    transform: scale(1.06) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes studioBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+.studio-pop {
+  opacity: 0;
+  animation:
+    studioPopIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both,
+    studioBob 5s ease-in-out infinite 0.7s;
+  will-change: transform, opacity;
+}
+
+/* Emoji "sticker" on each post — a soft wobble so content feels alive. */
+@keyframes studioWobble {
+  0%,
+  100% {
+    transform: rotate(-6deg) scale(1);
+  }
+  50% {
+    transform: rotate(6deg) scale(1.08);
+  }
+}
+.studio-sticker {
+  display: inline-block;
+  animation: studioWobble 3.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* "Approved" stamp thuds in on the approved posts. */
+@keyframes studioStamp {
+  0% {
+    opacity: 0;
+    transform: rotate(-12deg) scale(1.7);
+  }
+  70% {
+    opacity: 1;
+    transform: rotate(-12deg) scale(0.94);
+  }
+  100% {
+    transform: rotate(-12deg) scale(1);
+  }
+}
+.studio-stamp {
+  background: rgba(22, 185, 129, 0.85);
+  animation: studioStamp 2.4s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-aurora,
   .animate-float,
@@ -487,6 +619,12 @@
   .animate-spin-slow,
   .animate-pop,
   .animate-rise,
+  .studio-float,
+  .studio-floatinner,
+  .studio-reel,
+  .studio-pop,
+  .studio-sticker,
+  .studio-stamp,
   .text-social-gradient,
   .lj-grid,
   .lj-grid .lj-bh,
@@ -497,5 +635,9 @@
   }
   .lj-scene:first-of-type {
     opacity: 1;
+  }
+  /* Stickers fade in via animation — keep them visible when motion is off. */
+  .studio-pop {
+    opacity: 1 !important;
   }
 }

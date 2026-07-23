@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import type { Company, Post, Highlight, Platform } from "@/lib/types";
@@ -14,6 +14,8 @@ import { Media } from "@/components/Media";
 import lunjaWordmark from "@/assets/lunja-wordmark-white.png";
 import {
   Lock,
+  Eye,
+  EyeOff,
   ArrowRight,
   Check,
   ChevronDown,
@@ -37,6 +39,7 @@ import {
   MoreHorizontal,
   Music2,
   Share2,
+  CalendarClock,
 } from "lucide-react";
 
 export const Route = createFileRoute("/c/$slug")({
@@ -128,20 +131,63 @@ function ClientRoom() {
     );
 
   if (!authed || !company) {
-    const accent = branding?.accent_color || undefined;
-    const logo = branding?.logo_url || branding?.profile_pic_url || null;
-    const brandName = branding?.name;
-    const initials = (brandName || slug).slice(0, 2).toUpperCase();
-    const BrandMark = ({ size }: { size: string }) => (
-      <span
-        className={`grid shrink-0 place-items-center overflow-hidden rounded-2xl text-base font-bold text-white shadow-lg ring-1 ring-black/5 ${size}`}
-        style={{ background: accent || "#1a1208" }}
-      >
-        {logo ? <img src={logo} alt="" className="h-full w-full object-cover" /> : initials}
-      </span>
-    );
+    // Lunja Village keeps its bespoke atelier identity; every other company
+    // client gets the shared studio split-screen login. Detection is by slug
+    // or brand name so no per-company wiring is ever needed.
+    const isLunja = /lunja/i.test(slug) || /lunja/i.test(branding?.name ?? "");
+    const shared: LoginProps = {
+      slug,
+      branding,
+      pw,
+      setPw,
+      submitting,
+      onSubmit: handleLogin,
+    };
+    return isLunja ? <AtelierLogin {...shared} /> : <StudioLogin {...shared} />;
+  }
 
-    return (
+  return (
+    <ReviewPhone
+      company={company}
+      posts={posts}
+      highlights={highlights}
+      onLogout={logout}
+      onDecide={async (post, status, comment) => {
+        await decide({ data: { slug, password: pw, postId: post.id, status, comment } });
+        await refresh();
+      }}
+    />
+  );
+}
+
+type LoginProps = {
+  slug: string;
+  branding: CompanyBranding | null;
+  pw: string;
+  setPw: (v: string) => void;
+  submitting: boolean;
+  onSubmit: (e: React.FormEvent) => void;
+};
+
+/**
+ * Lunja Village's bespoke "atelier" login — dark atelier loop on the left,
+ * a shifting Mondrian grid behind a frosted card on the right.
+ */
+function AtelierLogin({ slug, branding, pw, setPw, submitting, onSubmit }: LoginProps) {
+  const accent = branding?.accent_color || undefined;
+  const logo = branding?.logo_url || branding?.profile_pic_url || null;
+  const brandName = branding?.name;
+  const initials = (brandName || slug).slice(0, 2).toUpperCase();
+  const BrandMark = ({ size }: { size: string }) => (
+    <span
+      className={`grid shrink-0 place-items-center overflow-hidden rounded-2xl text-base font-bold text-white shadow-lg ring-1 ring-black/5 ${size}`}
+      style={{ background: accent || "#1a1208" }}
+    >
+      {logo ? <img src={logo} alt="" className="h-full w-full object-cover" /> : initials}
+    </span>
+  );
+
+  return (
       <main className="lunja-auth grid min-h-screen grid-cols-1 lg:grid-cols-[1.05fr_1fr]">
         {/* LEFT - looping atelier side video: sketching, print proofs, swatches, tabletop */}
         <section className="relative hidden flex-col justify-between overflow-hidden p-12 text-[#fdf8ee] lg:flex xl:p-16">
@@ -244,7 +290,7 @@ function ClientRoom() {
               )}
             </p>
 
-            <form onSubmit={handleLogin} className="mt-8">
+            <form onSubmit={onSubmit} className="mt-8">
               <label className="lj-module block rounded-2xl px-4 py-3">
                 <span className="lj-eyebrow text-[10px] uppercase text-[#3d2c1e]/65">
                   Workspace password
@@ -279,20 +325,516 @@ function ClientRoom() {
           </div>
         </section>
       </main>
-    );
-  }
+  );
+}
+
+/** Turn a workspace slug into a presentable title (never shown as a raw slug). */
+function prettyName(slug: string) {
+  return (
+    slug
+      .replace(/[-_]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/\b\w/g, (c) => c.toUpperCase()) || "Your studio"
+  );
+}
+
+/**
+ * Shared "studio" login for every non-Lunja company client. A full-bleed
+ * split-screen identity: a deep-aubergine brand stage on the left with a live,
+ * auto-playing demo phone and floating review stickers, and a clean white
+ * sign-in panel on the right. The company's own accent colour tints everything,
+ * so the design never needs per-company edits.
+ */
+function StudioLogin({ slug, branding, pw, setPw, submitting, onSubmit }: LoginProps) {
+  const [show, setShow] = useState(false);
+  const accent = branding?.accent_color || "#f2683c";
+  const logo = branding?.logo_url || branding?.profile_pic_url || null;
+  const brandName = branding?.name || prettyName(slug);
+  const initials = (branding?.name || slug).slice(0, 2).toUpperCase();
 
   return (
-    <ReviewPhone
-      company={company}
-      posts={posts}
-      highlights={highlights}
-      onLogout={logout}
-      onDecide={async (post, status, comment) => {
-        await decide({ data: { slug, password: pw, postId: post.id, status, comment } });
-        await refresh();
-      }}
-    />
+    <main className="studio-auth grid min-h-screen grid-cols-1 lg:grid-cols-[1.1fr_1fr]">
+      {/* LEFT — deep-aubergine brand stage with the live demo phone */}
+      <section className="relative hidden flex-col justify-between overflow-hidden bg-[#2e1d3f] p-10 text-white lg:flex xl:p-14">
+        {/* layered accent glows (transform/opacity only — no animated blur) */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -left-24 -top-24 h-[30rem] w-[30rem] rounded-full opacity-70"
+          style={{ background: `radial-gradient(circle at 50% 50%, ${accent}, ${accent}00 70%)` }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-32 -right-16 h-[26rem] w-[26rem] rounded-full opacity-50"
+          style={{ background: `radial-gradient(circle at 50% 50%, #6d5bd0, #6d5bd000 70%)` }}
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.05] [background-image:radial-gradient(#fff_1px,transparent_1px)] [background-size:22px_22px]"
+        />
+
+        <div className="relative z-10 flex items-center gap-3">
+          {logo ? (
+            <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl bg-white/10 ring-1 ring-white/15">
+              <img src={logo} alt="" className="h-full w-full object-cover" />
+            </span>
+          ) : null}
+          <div className="min-w-0">
+            <p className="lj-serif truncate text-2xl leading-tight">{brandName}</p>
+            <p className="mt-0.5 text-sm text-white/65">The approval room</p>
+          </div>
+        </div>
+
+        <div className="relative z-10 max-w-md">
+          <h2 className="lj-serif text-4xl leading-[1.05] xl:text-5xl">
+            Your content,
+            <br />
+            <span style={{ color: accent }}>ready to review.</span>
+          </h2>
+          <p className="mt-4 max-w-sm text-[15px] leading-relaxed text-white/70">
+            Swipe through every post, reel and story in a true-to-life preview - then approve or
+            request changes in a tap.
+          </p>
+        </div>
+
+        <StudioDemo accent={accent} brandName={brandName} logo={logo} initials={initials} />
+
+        <div className="relative z-10 flex items-center gap-2 text-xs text-white/55">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 ring-1 ring-white/10">
+            <Lock className="h-3.5 w-3.5" /> Private &amp; secure
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 ring-1 ring-white/10">
+            <Check className="h-3.5 w-3.5" /> No account needed
+          </span>
+        </div>
+      </section>
+
+      {/* RIGHT — sign-in panel */}
+      <section className="relative flex flex-col justify-center p-8 sm:p-12 lg:p-16">
+        <div className="mx-auto w-full max-w-sm">
+          {/* Brand header for mobile, where the left stage is hidden */}
+          <div className="mb-8 flex items-center gap-3 lg:hidden">
+            <span
+              className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl text-base font-bold text-white"
+              style={{ background: accent }}
+            >
+              {logo ? <img src={logo} alt="" className="h-full w-full object-cover" /> : initials}
+            </span>
+            <p className="lj-serif truncate text-xl leading-tight text-[#1f142e]">{brandName}</p>
+          </div>
+
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wide"
+            style={{ background: `${accent}1a`, color: accent }}
+          >
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: accent }} />
+            Welcome back
+          </span>
+          <h1 className="lj-serif mt-4 text-4xl leading-tight text-[#1f142e] sm:text-[2.75rem]">
+            Log in to {brandName}
+          </h1>
+          <p className="mt-3 text-[15px] text-[#6b5f78]">
+            Enter the password your studio shared to open your approval room.
+          </p>
+
+          <form onSubmit={onSubmit} className="mt-8">
+            <label className="block text-xs font-semibold uppercase tracking-wide text-[#6b5f78]">
+              Workspace password
+            </label>
+            <div className="studio-field mt-2 flex items-center gap-3 rounded-2xl bg-[#f5f3f8] px-4 py-3.5">
+              <Lock className="h-5 w-5 shrink-0 text-[#a397b0]" />
+              <input
+                type={show ? "text" : "password"}
+                autoFocus
+                value={pw}
+                onChange={(e) => setPw(e.target.value)}
+                placeholder="••••••••••"
+                className="w-full bg-transparent text-base text-[#1f142e] outline-none placeholder:text-[#b6acc0]"
+              />
+              <button
+                type="button"
+                onClick={() => setShow((s) => !s)}
+                className="shrink-0 text-[#a397b0] transition hover:text-[#1f142e]"
+                aria-label={show ? "Hide password" : "Show password"}
+              >
+                {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
+
+            <button
+              disabled={submitting || !pw}
+              className="group mt-7 flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold uppercase tracking-wide text-white shadow-lg transition hover:brightness-105 active:scale-[0.99] disabled:opacity-50"
+              style={{ background: accent, boxShadow: `0 18px 40px -16px ${accent}` }}
+            >
+              {submitting ? "Signing in…" : "Enter approval room"}
+              {!submitting && (
+                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+              )}
+            </button>
+          </form>
+
+          <p className="mt-8 text-center text-sm text-[#6b5f78]">
+            Don&apos;t have the password?{" "}
+            <span className="font-semibold text-[#1f142e]">Ask your studio.</span>
+          </p>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+// Real, editorial-grade photography for the demo feed (Unsplash, sized/optimised
+// on the fly). A soft gradient sits behind each image so the frame still reads
+// if a shot is slow to load.
+const shot = (id: string, w = 480) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=70`;
+
+// Feed for the live demo phone — an approval story woven through real content.
+const STUDIO_REEL = [
+  {
+    tag: "Product launch",
+    img: shot("photo-1441986300917-64674bd600d8"),
+    likes: "2,481",
+    caption: "The new collection is live",
+    status: "approved" as const,
+  },
+  {
+    tag: "Behind the scenes",
+    img: shot("photo-1490481651871-ab68de25d43d"),
+    likes: "1,208",
+    caption: "On set today",
+    status: "pending" as const,
+  },
+  {
+    tag: "Reel",
+    img: shot("photo-1499696010180-025ef6e1a8f9"),
+    likes: "3,760",
+    caption: "Golden hour",
+    status: "approved" as const,
+  },
+  {
+    tag: "Story",
+    img: shot("photo-1512436991641-6745cdb1723f"),
+    likes: "980",
+    caption: "Fresh this morning",
+    status: "pending" as const,
+  },
+];
+
+// Photos reused across the profile-grid and story phones.
+const STUDIO_SHOTS = [
+  shot("photo-1441986300917-64674bd600d8", 240),
+  shot("photo-1483985988355-763728e1935b", 240),
+  shot("photo-1512436991641-6745cdb1723f", 240),
+  shot("photo-1499696010180-025ef6e1a8f9", 240),
+  shot("photo-1490481651871-ab68de25d43d", 240),
+  shot("photo-1445205170230-053b83016050", 240),
+  shot("photo-1519681393784-d120267933ba", 240),
+  shot("photo-1506744038136-46273834b3fb", 240),
+  shot("photo-1502920917128-1aa500764cbd", 240),
+];
+const STUDIO_STORY = shot("photo-1519681393784-d120267933ba");
+const STUDIO_TILE_OK = [true, true, false, true, false, true, true, false, true];
+
+type PhoneVars = React.CSSProperties & Record<string, string | number>;
+
+/**
+ * The live demo: three floating phones at different depths (a front phone
+ * running an auto-scrolling feed, plus a profile-grid and a story phone behind
+ * it), ringed by floating review stickers. The whole composition parallaxes to
+ * the cursor. Motion is pure CSS/transform + a tiny pointer handler — no
+ * animation framework, no animated blur — so it stays light on the GPU.
+ */
+function StudioDemo({
+  accent,
+  brandName,
+  logo,
+  initials,
+}: {
+  accent: string;
+  brandName: string;
+  logo: string | null;
+  initials: string;
+}) {
+  const stageRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const setVars = (px: number, py: number) =>
+      el.querySelectorAll<HTMLElement>("[data-depth]").forEach((n) => {
+        const d = parseFloat(n.dataset.depth || "1");
+        n.style.setProperty("--px", `${px * d * -14}px`);
+        n.style.setProperty("--py", `${py * d * -14}px`);
+      });
+    const onMove = (e: MouseEvent) => {
+      const r = el.getBoundingClientRect();
+      setVars((e.clientX - r.left) / r.width - 0.5, (e.clientY - r.top) / r.height - 0.5);
+    };
+    const onLeave = () => setVars(0, 0);
+    el.addEventListener("mousemove", onMove);
+    el.addEventListener("mouseleave", onLeave);
+    return () => {
+      el.removeEventListener("mousemove", onMove);
+      el.removeEventListener("mouseleave", onLeave);
+    };
+  }, []);
+
+  const Avatar = ({ className }: { className: string }) => (
+    <span
+      className={`grid shrink-0 place-items-center overflow-hidden rounded-full font-bold text-white ${className}`}
+      style={{ background: accent }}
+    >
+      {logo ? <img src={logo} alt="" className="h-full w-full object-cover" /> : initials}
+    </span>
+  );
+
+  const reel = [...STUDIO_REEL, ...STUDIO_REEL]; // doubled → seamless loop
+
+  return (
+    <div ref={stageRef} className="relative z-10 flex-1">
+      <div className="relative mx-auto h-[540px] w-full max-w-xl">
+        {/* ---- Tertiary phone: a single story (back-left) ---- */}
+        <div
+          className="studio-pw"
+          data-depth="3"
+          style={
+            {
+              left: "34%",
+              top: "52%",
+              "--rot": "-13deg",
+              "--sc": 0.72,
+              "--fdur": "8s",
+              "--fdelay": "0.6s",
+            } as PhoneVars
+          }
+        >
+          <div className="studio-floatinner">
+            <PhoneFrame w={228} h={470}>
+              <div className="pointer-events-none absolute inset-0 z-10 rounded-[29px] bg-gradient-to-b from-transparent via-transparent to-[#2e1d3f]/40" />
+              <div className="absolute inset-x-3 top-3.5 z-10 flex gap-1">
+                <span className="h-[3px] flex-1 rounded bg-white" />
+                <span className="h-[3px] flex-1 rounded bg-white/40" />
+                <span className="h-[3px] flex-1 rounded bg-white/40" />
+              </div>
+              <img
+                src={STUDIO_STORY}
+                alt=""
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </PhoneFrame>
+          </div>
+        </div>
+
+        {/* ---- Secondary phone: profile grid (back-right) ---- */}
+        <div
+          className="studio-pw"
+          data-depth="2"
+          style={
+            {
+              left: "66%",
+              top: "50%",
+              "--rot": "11deg",
+              "--sc": 0.82,
+              "--fdur": "7.5s",
+              "--fdelay": "0.3s",
+            } as PhoneVars
+          }
+        >
+          <div className="studio-floatinner">
+            <PhoneFrame w={250} h={500}>
+              <div className="pointer-events-none absolute inset-0 z-10 rounded-[29px] bg-gradient-to-b from-transparent via-transparent to-[#2e1d3f]/25" />
+              <div className="p-3 pt-8">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12 text-sm" />
+                  <div className="flex flex-1 justify-around text-center text-[10px] text-[#9a8fa6]">
+                    {[
+                      ["128", "posts"],
+                      ["4.6k", "followers"],
+                      ["312", "following"],
+                    ].map(([n, l]) => (
+                      <div key={l}>
+                        <b className="block text-[13px] text-[#1f142e]">{n}</b>
+                        {l}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-1">
+                  {STUDIO_SHOTS.map((src, i) => (
+                    <span key={i} className="relative aspect-square overflow-hidden rounded-md">
+                      <img
+                        src={src}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                      <span
+                        className="absolute bottom-1 left-1 h-1.5 w-1.5 rounded-full ring-1 ring-white/80"
+                        style={{ background: STUDIO_TILE_OK[i] ? "#16b981" : accent }}
+                      />
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </PhoneFrame>
+          </div>
+        </div>
+
+        {/* ---- Primary phone: live auto-scrolling feed (front) ---- */}
+        <div
+          className="studio-pw z-[4]"
+          data-depth="1"
+          style={{ left: "48%", top: "50%", "--fdur": "6.5s" } as PhoneVars}
+        >
+          <div className="studio-floatinner">
+            <PhoneFrame w={288} h={540}>
+              <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between border-b border-[#efeaf4] bg-white/95 px-4 pb-2.5 pt-8">
+                <div className="flex items-center gap-2 text-sm font-bold text-[#1f142e]">
+                  <Avatar className="h-6 w-6 text-[10px]" />
+                  <span className="max-w-[8rem] truncate">{brandName}</span>
+                </div>
+                <Heart className="h-[18px] w-[18px] text-[#1f142e]" />
+              </div>
+
+              <div className="absolute inset-x-0 bottom-0 top-[56px] overflow-hidden">
+                <div className="studio-reel">
+                  {reel.map((p, i) => (
+                    <article key={i} className="px-3.5 pb-4">
+                      <div className="flex items-center gap-2.5 py-2.5">
+                        <Avatar className="h-8 w-8 text-[11px]" />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-xs font-bold text-[#1f142e]">
+                            {brandName}
+                          </div>
+                          <div className="text-[10px] text-[#9a8fa6]">{p.tag}</div>
+                        </div>
+                        <span
+                          className="rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wide"
+                          style={
+                            p.status === "approved"
+                              ? { background: "#16b98122", color: "#0f9d6f" }
+                              : { background: `${accent}1f`, color: accent }
+                          }
+                        >
+                          {p.status === "approved" ? "Approved" : "Review"}
+                        </span>
+                      </div>
+                      <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-[#efeaf4]">
+                        <img
+                          src={p.img}
+                          alt=""
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                        {p.status === "approved" && (
+                          <span className="studio-stamp absolute right-3.5 top-3.5 rounded-lg border-2 border-white/90 px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-white">
+                            Approved
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-2.5 flex items-center gap-3.5 text-[#1f142e]">
+                        <Heart className="h-[18px] w-[18px]" />
+                        <MessageCircle className="h-[18px] w-[18px]" />
+                        <Send className="h-[18px] w-[18px]" />
+                      </div>
+                      <div className="mt-1 text-[11px] font-bold text-[#1f142e]">
+                        {p.likes} likes
+                      </div>
+                      <div className="text-[11px] text-[#6b5f78]">
+                        <b className="text-[#1f142e]">{brandName}</b> {p.caption}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+
+              <div className="absolute inset-x-0 bottom-0 z-20 flex items-center justify-around border-t border-[#efeaf4] bg-white/95 py-3">
+                <Home className="h-[18px] w-[18px] text-[#1f142e]" />
+                <Search className="h-[18px] w-[18px] text-[#9a8fa6]" />
+                <PlusSquare className="h-[18px] w-[18px] text-[#9a8fa6]" />
+                <Film className="h-[18px] w-[18px] text-[#9a8fa6]" />
+                <Avatar className="h-[22px] w-[22px] text-[9px]" />
+              </div>
+            </PhoneFrame>
+          </div>
+        </div>
+
+        {/* ---- Floating review stickers + content card ---- */}
+        <div
+          className="studio-pop absolute left-[2%] top-[12%] z-[7] flex items-center gap-2.5 rounded-2xl bg-white px-3.5 py-2.5 text-[#1f142e] shadow-xl"
+          style={{ animationDelay: "0.2s, 0.9s" }}
+        >
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-[#16b981] text-white">
+            <Check className="h-4 w-4" />
+          </span>
+          <span className="text-[11px] leading-tight">
+            <b className="block">Approved</b>
+            <span className="text-[#9a8fa6]">Reel · just now</span>
+          </span>
+        </div>
+
+        <div
+          className="studio-pop absolute right-[3%] top-[19%] z-[7] flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-[#1f142e] shadow-xl"
+          style={{ animationDelay: "0.6s, 1.3s" }}
+        >
+          <Heart className="h-4 w-4 fill-[#f43f5e] text-[#f43f5e]" /> 2.4k
+        </div>
+
+        <div
+          className="studio-pop absolute left-0 bottom-[22%] z-[7] flex max-w-[11rem] items-start gap-2 rounded-2xl bg-white px-3.5 py-2.5 text-[11px] text-[#1f142e] shadow-xl"
+          style={{ animationDelay: "1s, 1.7s" }}
+        >
+          <MessageCircle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: accent }} />
+          <span>
+            <b>Client:</b> Obsessed with this one!
+          </span>
+        </div>
+
+        <div
+          className="studio-pop absolute right-[6%] bottom-[12%] z-[7] flex items-center gap-1 rounded-full bg-white px-3.5 py-1.5 text-sm shadow-xl"
+          style={{ animationDelay: "1.4s, 2.1s" }}
+        >
+          {"★★★★★".split("").map((s, i) => (
+            <span key={i} style={{ color: "#f4b740" }}>
+              {s}
+            </span>
+          ))}
+        </div>
+
+        <div
+          className="studio-pop absolute -right-1 top-[46%] z-[7] flex items-center gap-2.5 rounded-2xl bg-white px-3.5 py-2.5 text-[#1f142e] shadow-xl"
+          style={{ animationDelay: "0.8s, 1.5s" }}
+        >
+          <span
+            className="grid h-8 w-8 place-items-center rounded-xl"
+            style={{ background: `${accent}2e`, color: accent }}
+          >
+            <CalendarClock className="h-4 w-4" />
+          </span>
+          <span className="text-[11px] leading-tight">
+            <b className="block">12 posts</b>
+            <span className="text-[#9a8fa6]">scheduled this week</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Shared phone shell: notch + rounded screen at an explicit size. */
+function PhoneFrame({ w, h, children }: { w: number; h: number; children: React.ReactNode }) {
+  return (
+    <div
+      className="relative rounded-[40px] border-[11px] border-[#160d20] bg-white shadow-2xl"
+      style={{ width: w }}
+    >
+      <div className="absolute left-1/2 top-2.5 z-30 h-5 w-24 -translate-x-1/2 rounded-full bg-[#160d20]" />
+      <div className="relative overflow-hidden rounded-[29px] bg-white" style={{ height: h }}>
+        {children}
+      </div>
+    </div>
   );
 }
 
