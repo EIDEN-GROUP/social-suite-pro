@@ -1,6 +1,6 @@
 export type Platform = "instagram" | "tiktok" | "facebook" | "twitter" | "linkedin";
 export type PostType = "post" | "reel" | "story" | "carousel";
-export type ApprovalStatus = "pending" | "approved" | "rejected";
+export type ApprovalStatus = "pending" | "approved" | "rejected" | "posted";
 
 export interface Company {
   id: string;
@@ -35,6 +35,10 @@ export interface Post {
   client_comment: string | null;
   decided_at: string | null;
   scheduled_at: string | null;
+  /** Live URL set by admin after approval - transitions post to "posted". */
+  post_url: string | null;
+  /** When the post was marked as posted. */
+  posted_at: string | null;
   created_at: string;
 }
 

@@ -220,3 +220,21 @@ CREATE POLICY "Superadmin reads contacts" ON public.contacts FOR SELECT TO authe
   USING (public.has_role(auth.uid(), 'superadmin'));
 
 
+
+
+-- >>>>>>>>>>>>>>>>>>>>  20260610000000_posted_link.sql  <<<<<<<<<<<<<<<<<<<<
+-- Posted status: live-post link + posted timestamp.
+ALTER TABLE public.posts
+  ADD COLUMN IF NOT EXISTS post_url text,
+  ADD COLUMN IF NOT EXISTS posted_at timestamptz;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'approval_status' AND e.enumlabel = 'posted'
+  ) THEN
+    ALTER TYPE public.approval_status ADD VALUE 'posted';
+  END IF;
+END $$;
+

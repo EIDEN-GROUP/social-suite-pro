@@ -105,6 +105,8 @@ const mk = (platform: Platform, post_type: PostType, seed: string, caption = "")
   client_comment: null,
   decided_at: null,
   scheduled_at: null,
+  post_url: null,
+  posted_at: null,
   created_at: "",
 });
 const demoPosts: Post[] = [

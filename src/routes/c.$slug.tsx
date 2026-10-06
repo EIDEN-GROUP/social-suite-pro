@@ -40,6 +40,7 @@ import {
   Music2,
   Share2,
   CalendarClock,
+  ExternalLink,
 } from "lucide-react";
 
 export const Route = createFileRoute("/c/$slug")({
@@ -1066,6 +1067,7 @@ function ReviewPhone({
     pending: platformPosts.filter((p) => p.status === "pending").length,
     approved: platformPosts.filter((p) => p.status === "approved").length,
     rejected: platformPosts.filter((p) => p.status === "rejected").length,
+    posted: platformPosts.filter((p) => p.status === "posted").length,
   };
   const open = (list: Post[], id: string) => setViewer({ list, id });
 
@@ -1088,7 +1090,8 @@ function ReviewPhone({
           <span className="hidden sm:inline">
             <strong className="text-foreground">{counts.pending}</strong> pending ·{" "}
             <strong className="text-emerald-600">{counts.approved}</strong> ok ·{" "}
-            <strong className="text-rose-600">{counts.rejected}</strong> changes
+            <strong className="text-rose-600">{counts.rejected}</strong> changes ·{" "}
+            <strong className="text-sky-600">{counts.posted}</strong> posted
           </span>
           <button onClick={onLogout} className="rounded-sm border editorial-rule px-3 py-1.5">
             Sign out
@@ -1186,7 +1189,9 @@ function statusDot(status: string) {
     ? "bg-emerald-500"
     : status === "rejected"
       ? "bg-rose-500"
-      : "bg-amber-400";
+      : status === "posted"
+        ? "bg-sky-500"
+        : "bg-amber-400";
 }
 
 // ---------------------------------------------------------------------------
@@ -1765,6 +1770,7 @@ function PostViewer({
   const cur = media[mi];
   const isVideo = post.media_type === "video";
   const isCarousel = media.length > 1;
+  const isPosted = post.status === "posted";
 
   // Arrows/taps page THROUGH a carousel first, then roll over to the
   // adjacent post only once you're on the carousel's first/last frame.
@@ -1850,39 +1856,69 @@ function PostViewer({
       )}
 
       <div className="border-t border-white/10 bg-black/95 p-3">
-        <div className="mb-2 flex items-center gap-2">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
           <span
-            className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest ${post.status === "approved" ? "bg-emerald-500/20 text-emerald-300" : post.status === "rejected" ? "bg-rose-500/20 text-rose-300" : "bg-white/10 text-white/60"}`}
+            className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest ${post.status === "approved" ? "bg-emerald-500/20 text-emerald-300" : post.status === "rejected" ? "bg-rose-500/20 text-rose-300" : post.status === "posted" ? "bg-sky-500/20 text-sky-300" : "bg-white/10 text-white/60"}`}
           >
             {post.status === "rejected" ? "changes requested" : post.status}
           </span>
           <span className="text-[10px] uppercase tracking-widest text-white/40">
             {post.platform} · {post.post_type}
           </span>
+          {post.posted_at && (
+            <span className="text-[10px] tracking-wide text-white/50">
+              Posted {new Date(post.posted_at).toLocaleString()}
+            </span>
+          )}
         </div>
-        <textarea
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          rows={2}
-          placeholder="Your feedback… (required to request changes)"
-          className="w-full rounded-md border border-white/15 bg-white/5 p-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
-        />
-        <div className="mt-2 flex gap-2">
-          <button
-            disabled={busy}
-            onClick={() => act("approved")}
-            className="flex-1 rounded-md bg-emerald-500 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            Approve
-          </button>
-          <button
-            disabled={busy || !comment.trim()}
-            onClick={() => act("rejected")}
-            className="flex-1 rounded-md border border-white/25 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
-          >
-            Request changes
-          </button>
-        </div>
+        {isPosted ? (
+          <div>
+            {post.post_url ? (
+              <a
+                href={post.post_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-full items-center justify-center gap-2 rounded-md bg-sky-500 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-400"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Check live post
+              </a>
+            ) : (
+              <p className="rounded-md bg-white/5 px-3 py-2.5 text-center text-xs text-white/60">
+                This post is marked as posted.
+              </p>
+            )}
+            {post.client_comment && (
+              <p className="mt-2 line-clamp-2 text-xs text-white/50">{post.client_comment}</p>
+            )}
+          </div>
+        ) : (
+          <>
+            <textarea
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              rows={2}
+              placeholder="Your feedback… (required to request changes)"
+              className="w-full rounded-md border border-white/15 bg-white/5 p-2 text-sm text-white placeholder:text-white/30 focus:border-white/40 focus:outline-none"
+            />
+            <div className="mt-2 flex gap-2">
+              <button
+                disabled={busy}
+                onClick={() => act("approved")}
+                className="flex-1 rounded-md bg-emerald-500 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                Approve
+              </button>
+              <button
+                disabled={busy || !comment.trim()}
+                onClick={() => act("rejected")}
+                className="flex-1 rounded-md border border-white/25 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+              >
+                Request changes
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
