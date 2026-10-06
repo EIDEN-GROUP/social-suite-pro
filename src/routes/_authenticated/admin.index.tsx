@@ -2,7 +2,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import type { Company } from "@/lib/types";
+import { CalendarDays, ExternalLink, LayoutGrid, List, Search } from "lucide-react";
+import type { Company, ApprovalStatus } from "@/lib/types";
+import { postedAgo } from "@/lib/posted";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: AdminHome,
@@ -20,6 +22,51 @@ function AdminHome() {
     client_password: "client123",
   });
   const [busy, setBusy] = useState(false);
+  const [stats, setStats] = useState<Record<string, CompanyStats>>({});
+  const [query, setQuery] = useState("");
+  const [layout, setLayout] = useState<"grid" | "list">(() => {
+    try {
+      return localStorage.getItem("smim-companies-layout") === "list" ? "list" : "grid";
+    } catch {
+      return "grid";
+    }
+  });
+
+  function changeLayout(next: "grid" | "list") {
+    setLayout(next);
+    try {
+      localStorage.setItem("smim-companies-layout", next);
+    } catch {
+      /* ignore - preference just won't persist */
+    }
+  }
+
+  async function loadStats() {
+    const rows: { company_id: string; status: ApprovalStatus; posted_at: string | null }[] = [];
+    for (let from = 0; ; from += 1000) {
+      const { data } = await supabase
+        .from("posts")
+        .select("company_id, status, posted_at")
+        .range(from, from + 999);
+      if (!data) break;
+      rows.push(...(data as typeof rows));
+      if (data.length < 1000) break;
+    }
+    const next: Record<string, CompanyStats> = {};
+    for (const r of rows) {
+      const st = (next[r.company_id] ??= {
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        posted: 0,
+        lastPosted: null,
+      });
+      st[r.status] += 1;
+      if (r.posted_at && (!st.lastPosted || r.posted_at > st.lastPosted))
+        st.lastPosted = r.posted_at;
+    }
+    setStats(next);
+  }
 
   async function load() {
     setLoading(true);
@@ -42,6 +89,7 @@ function AdminHome() {
     if (error) toast.error(error.message);
     setCompanies((data ?? []) as Company[]);
     setLoading(false);
+    void loadStats();
   }
   useEffect(() => {
     void load();
@@ -73,6 +121,11 @@ function AdminHome() {
       setBusy(false);
     }
   }
+
+  const visible = companies.filter((c) => {
+    const q = query.trim().toLowerCase();
+    return !q || c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q);
+  });
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -128,31 +181,60 @@ function AdminHome() {
             </p>
           </div>
         ) : (
-          <ul className="mt-10 divide-y editorial-rule border-y editorial-rule">
-            {companies.map((c) => (
-              <li key={c.id}>
-                <Link
-                  to="/admin/companies/$slug"
-                  params={{ slug: c.slug }}
-                  className="flex items-center justify-between py-5 hover:bg-foreground/[0.02]"
-                >
-                  <div className="flex items-center gap-4">
-                    <span
-                      className="h-10 w-10 rounded-full"
-                      style={{ background: c.accent_color }}
-                    />
-                    <div>
-                      <div className="font-display text-2xl">{c.name}</div>
-                      <div className="text-xs uppercase tracking-widest text-muted-foreground">
-                        /c/{c.slug}
-                      </div>
-                    </div>
-                  </div>
-                  <span className="text-sm text-muted-foreground">Open →</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <>
+            <div className="mt-8 flex flex-wrap items-center justify-between gap-3">
+              <label className="relative w-full max-w-xs">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search companies…"
+                  className="w-full rounded-sm border editorial-rule bg-transparent py-2 pl-9 pr-3 text-sm outline-none focus:border-foreground"
+                />
+              </label>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground">
+                  {visible.length} of {companies.length}
+                </span>
+                <div className="flex border editorial-rule">
+                  {(
+                    [
+                      ["grid", LayoutGrid, "Card view"],
+                      ["list", List, "List view"],
+                    ] as const
+                  ).map(([id, Icon, label]) => (
+                    <button
+                      key={id}
+                      aria-label={label}
+                      title={label}
+                      onClick={() => changeLayout(id)}
+                      className={`p-2 ${layout === id ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {visible.length === 0 ? (
+              <p className="mt-10 py-10 text-center text-sm text-muted-foreground">
+                No company matches "{query}".
+              </p>
+            ) : (
+              <ul
+                className={
+                  layout === "grid"
+                    ? "mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+                    : "mt-6 divide-y editorial-rule border-y editorial-rule"
+                }
+              >
+                {visible.map((c) => (
+                  <CompanyCard key={c.id} company={c} stats={stats[c.id]} layout={layout} />
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </div>
 
@@ -258,5 +340,146 @@ function Field({
         className="mt-1 w-full border-b editorial-rule bg-transparent py-2 outline-none focus:border-foreground"
       />
     </label>
+  );
+}
+
+interface CompanyStats {
+  pending: number;
+  approved: number;
+  rejected: number;
+  posted: number;
+  lastPosted: string | null;
+}
+
+function CompanyLogo({ company, size }: { company: Company; size: number }) {
+  const src = company.logo_url || company.profile_pic_url;
+  const initials = company.name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join("");
+  return (
+    <span
+      className="grid shrink-0 place-items-center overflow-hidden rounded-full border-2 border-background bg-background shadow-sm"
+      style={{ width: size, height: size, background: src ? undefined : company.accent_color }}
+    >
+      {src ? (
+        <img src={src} alt={company.name} className="h-full w-full object-cover" />
+      ) : (
+        <span className="font-display text-white" style={{ fontSize: size * 0.4 }}>
+          {initials || "?"}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function CompanyCard({
+  company: c,
+  stats,
+  layout,
+}: {
+  company: Company;
+  stats?: CompanyStats;
+  layout: "grid" | "list";
+}) {
+  const chips = [
+    { n: stats?.pending ?? 0, label: "pending", cls: "bg-amber-400/20 text-amber-700" },
+    { n: stats?.approved ?? 0, label: "approved", cls: "bg-emerald-500/15 text-emerald-700" },
+    { n: stats?.rejected ?? 0, label: "changes", cls: "bg-rose-500/15 text-rose-700" },
+    { n: stats?.posted ?? 0, label: "posted", cls: "bg-sky-500/15 text-sky-700" },
+  ];
+  const actions = (
+    <div className="flex items-center gap-2 text-xs">
+      <Link
+        to="/admin/calendar"
+        search={{ company: c.slug }}
+        className="inline-flex items-center gap-1.5 rounded-sm border editorial-rule px-2.5 py-1.5 hover:bg-foreground/5"
+      >
+        <CalendarDays className="h-3.5 w-3.5" /> Calendar
+      </Link>
+      <a
+        href={`/c/${c.slug}`}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex items-center gap-1.5 rounded-sm border editorial-rule px-2.5 py-1.5 hover:bg-foreground/5"
+      >
+        <ExternalLink className="h-3.5 w-3.5" /> Client view
+      </a>
+    </div>
+  );
+  const chipRow = (
+    <div className="flex flex-wrap gap-1.5">
+      {chips.map((x) => (
+        <span
+          key={x.label}
+          className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-widest ${x.cls} ${x.n === 0 ? "opacity-40" : ""}`}
+        >
+          {x.n} {x.label}
+        </span>
+      ))}
+    </div>
+  );
+
+  if (layout === "list") {
+    return (
+      <li className="flex flex-wrap items-center justify-between gap-4 py-4 hover:bg-foreground/[0.02]">
+        <Link
+          to="/admin/companies/$slug"
+          params={{ slug: c.slug }}
+          className="flex min-w-0 flex-1 items-center gap-4"
+        >
+          <CompanyLogo company={c} size={48} />
+          <div className="min-w-0">
+            <div className="truncate font-display text-2xl">{c.name}</div>
+            <div className="text-xs uppercase tracking-widest text-muted-foreground">
+              /c/{c.slug}
+              {stats?.lastPosted && <> · last posted {postedAgo(stats.lastPosted)}</>}
+            </div>
+          </div>
+        </Link>
+        <div className="hidden md:block">{chipRow}</div>
+        {actions}
+      </li>
+    );
+  }
+
+  return (
+    <li className="group overflow-hidden rounded border editorial-rule bg-background transition hover:shadow-md">
+      <Link to="/admin/companies/$slug" params={{ slug: c.slug }} className="block">
+        <div
+          className="h-24 bg-cover bg-center"
+          style={{
+            backgroundColor: c.accent_color,
+            backgroundImage: c.cover_url
+              ? `url(${c.cover_url})`
+              : `linear-gradient(135deg, ${c.accent_color}, ${c.accent_color}66)`,
+          }}
+        />
+        <div className="px-4 pb-3">
+          <div className="-mt-8 flex items-end justify-between">
+            <CompanyLogo company={c} size={64} />
+            <span className="mb-1 text-xs text-muted-foreground transition group-hover:translate-x-0.5">
+              Open →
+            </span>
+          </div>
+          <div className="mt-2 truncate font-display text-2xl">{c.name}</div>
+          <div className="truncate text-xs uppercase tracking-widest text-muted-foreground">
+            /c/{c.slug}
+            {c.category && <> · {c.category}</>}
+          </div>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {stats?.lastPosted
+              ? `Last posted ${postedAgo(stats.lastPosted)}`
+              : "Nothing posted yet"}
+          </p>
+        </div>
+      </Link>
+      <div className="space-y-3 border-t editorial-rule px-4 py-3">
+        {chipRow}
+        {actions}
+      </div>
+    </li>
   );
 }
