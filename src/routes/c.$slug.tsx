@@ -45,6 +45,7 @@ import {
   Copy,
   X as CloseX,
 } from "lucide-react";
+import { format, isToday, isYesterday } from "date-fns";
 import { formatPostedAt, linkHost, postedAgo } from "@/lib/posted";
 
 export const Route = createFileRoute("/c/$slug")({
@@ -1200,6 +1201,17 @@ function ReviewPhone({
   );
 }
 
+function dayLabel(iso: string): string {
+  const d = new Date(iso);
+  if (isToday(d)) return "Today";
+  if (isYesterday(d)) return "Yesterday";
+  return format(d, "EEE, MMM d");
+}
+
+/**
+ * "Your posts are live" notice. Stays compact however many posts are marked as posted:
+ * a one-line summary with stacked thumbnails that expands into a scrollable list grouped by day.
+ */
 function LiveNotice({
   companyId,
   posts,
@@ -1212,6 +1224,7 @@ function LiveNotice({
   const storageKey = `smim-seen-posted-${companyId}`;
   const [seen, setSeen] = useState<string[]>([]);
   const [hidden, setHidden] = useState(false);
+  const [expanded, setExpanded] = useState<boolean | null>(null);
 
   useEffect(() => {
     try {
@@ -1237,84 +1250,142 @@ function LiveNotice({
     }
   }
 
-  const unseen = live.filter((p) => !seen.includes(p.id)).length;
-  const shown = live.slice(0, 3);
+  const unseen = live.filter((p) => !seen.includes(p.id));
+  // A single post shows its row right away; several start collapsed.
+  const isOpen = expanded ?? live.length === 1;
+  const groups: { label: string; items: Post[] }[] = [];
+  for (const p of live) {
+    const label = p.posted_at ? dayLabel(p.posted_at) : "Posted";
+    const last = groups[groups.length - 1];
+    if (last && last.label === label) last.items.push(p);
+    else groups.push({ label, items: [p] });
+  }
+  const headline =
+    unseen.length > 0
+      ? `${unseen.length} new post${unseen.length > 1 ? "s" : ""} live`
+      : `${live.length} post${live.length > 1 ? "s" : ""} live`;
 
   return (
     <div className="w-full max-w-[390px] overflow-hidden rounded-2xl border border-sky-500/30 bg-gradient-to-br from-sky-500/10 via-background to-emerald-500/10 shadow-sm">
-      <div className="flex items-center justify-between gap-2 px-4 pt-3">
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-2.5 w-2.5">
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        <button
+          onClick={() => setExpanded(!isOpen)}
+          aria-expanded={isOpen}
+          className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+        >
+          <span className="relative flex h-2.5 w-2.5 shrink-0">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75" />
             <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-sky-500" />
           </span>
-          <p className="text-xs font-semibold uppercase tracking-widest text-sky-700">
-            {unseen > 0
-              ? `${unseen} new post${unseen > 1 ? "s" : ""} live`
-              : `${live.length} post${live.length > 1 ? "s" : ""} live`}
-          </p>
-        </div>
+          <span className="truncate text-xs font-semibold uppercase tracking-widest text-sky-700">
+            {headline}
+          </span>
+          {!isOpen && (
+            <span className="ml-auto flex shrink-0 -space-x-2">
+              {live.slice(0, 4).map((p) => (
+                <span
+                  key={p.id}
+                  className="h-7 w-7 overflow-hidden rounded-full border-2 border-background bg-foreground/5"
+                >
+                  <Media post={p} className="h-full w-full object-cover" />
+                </span>
+              ))}
+              {live.length > 4 && (
+                <span className="grid h-7 w-7 place-items-center rounded-full border-2 border-background bg-foreground/10 text-[10px] font-medium">
+                  +{live.length - 4}
+                </span>
+              )}
+            </span>
+          )}
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 text-muted-foreground transition ${isOpen ? "rotate-180" : ""} ${isOpen ? "ml-auto" : ""}`}
+          />
+        </button>
         <button
           aria-label="Dismiss"
           onClick={() => {
             markSeen(live.map((p) => p.id));
             setHidden(true);
           }}
-          className="rounded-full p-1 text-muted-foreground hover:bg-foreground/5"
+          className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-foreground/5"
         >
           <CloseX className="h-3.5 w-3.5" />
         </button>
       </div>
-      <ul className="divide-y divide-foreground/5 px-2 pb-2 pt-1">
-        {shown.map((p) => (
-          <li key={p.id} className="flex items-center gap-3 rounded-xl p-2">
+
+      {isOpen && (
+        <div className="border-t border-foreground/5">
+          <div className="max-h-64 overflow-y-auto px-2 pb-2">
+            {groups.map((g) => (
+              <div key={g.label}>
+                <p className="sticky top-0 z-10 bg-background/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground backdrop-blur">
+                  {g.label} · {g.items.length}
+                </p>
+                <ul>
+                  {g.items.map((p) => {
+                    const future = p.posted_at
+                      ? new Date(p.posted_at).getTime() > Date.now()
+                      : false;
+                    return (
+                      <li key={p.id} className="flex items-center gap-3 rounded-xl p-2">
+                        <button
+                          onClick={() => {
+                            markSeen([p.id]);
+                            onOpen(p);
+                          }}
+                          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        >
+                          <span className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-foreground/10 bg-foreground/5">
+                            <Media post={p} className="h-full w-full object-cover" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+                              {p.platform} · {p.post_type}
+                              {!seen.includes(p.id) && (
+                                <span className="rounded-full bg-sky-500 px-1.5 py-px text-[9px] font-semibold text-white">
+                                  New
+                                </span>
+                              )}
+                            </span>
+                            <span className="block truncate text-xs font-medium">
+                              {p.posted_at ? format(new Date(p.posted_at), "p") : "Posted"}
+                              {future && <span className="text-sky-700"> · scheduled</span>}
+                            </span>
+                            {p.posted_at && (
+                              <span className="block text-[11px] text-muted-foreground">
+                                {future ? "Goes live " : ""}
+                                {postedAgo(p.posted_at)}
+                              </span>
+                            )}
+                          </span>
+                        </button>
+                        {p.post_url && (
+                          <a
+                            href={p.post_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => markSeen([p.id])}
+                            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-sky-500"
+                          >
+                            View <ExternalLink className="h-3 w-3" />
+                          </a>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
+          {unseen.length > 0 && (
             <button
-              onClick={() => {
-                markSeen([p.id]);
-                onOpen(p);
-              }}
-              className="flex min-w-0 flex-1 items-center gap-3 text-left"
+              onClick={() => markSeen(live.map((p) => p.id))}
+              className="flex w-full items-center justify-center gap-1.5 border-t border-foreground/5 py-2 text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground"
             >
-              <span className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-foreground/10 bg-foreground/5">
-                <Media post={p} className="h-full w-full object-cover" />
-              </span>
-              <span className="min-w-0">
-                <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
-                  {p.platform} · {p.post_type}
-                  {!seen.includes(p.id) && (
-                    <span className="rounded-full bg-sky-500 px-1.5 py-px text-[9px] font-semibold text-white">
-                      New
-                    </span>
-                  )}
-                </span>
-                <span className="block truncate text-xs font-medium">
-                  {p.posted_at ? formatPostedAt(p.posted_at) : "Posted"}
-                </span>
-                {p.posted_at && (
-                  <span className="block text-[11px] text-muted-foreground">
-                    {postedAgo(p.posted_at)}
-                  </span>
-                )}
-              </span>
+              <Check className="h-3 w-3" /> Mark all as seen
             </button>
-            {p.post_url && (
-              <a
-                href={p.post_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => markSeen([p.id])}
-                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-sky-500"
-              >
-                View <ExternalLink className="h-3 w-3" />
-              </a>
-            )}
-          </li>
-        ))}
-      </ul>
-      {live.length > shown.length && (
-        <p className="border-t border-foreground/5 px-4 py-2 text-center text-[11px] text-muted-foreground">
-          +{live.length - shown.length} more posted - tap any "posted" tile in the feed
-        </p>
+          )}
+        </div>
       )}
     </div>
   );
