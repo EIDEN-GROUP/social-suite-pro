@@ -20,6 +20,9 @@ import { Media } from "@/components/Media";
 import { formatPostedAt, postedAgo } from "@/lib/posted";
 
 export const Route = createFileRoute("/_authenticated/admin/calendar")({
+  validateSearch: (search: Record<string, unknown>): { company?: string } => ({
+    company: typeof search.company === "string" && search.company ? search.company : undefined,
+  }),
   component: PostedCalendarPage,
 });
 
@@ -37,6 +40,8 @@ const PLATFORM_DOT: Record<Platform, string> = {
 const dayKey = (d: Date) => format(d, "yyyy-MM-dd");
 
 function PostedCalendarPage() {
+  // /admin/calendar?company=<slug> locks the calendar to a single company.
+  const { company: scopedSlug } = Route.useSearch();
   const [companies, setCompanies] = useState<CompanyLite[]>([]);
   const [posts, setPosts] = useState<PostedPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,15 +73,18 @@ function PostedCalendarPage() {
   }, []);
 
   const companyById = useMemo(() => new Map(companies.map((c) => [c.id, c])), [companies]);
+  const scoped = scopedSlug ? companies.find((c) => c.slug === scopedSlug) : undefined;
+  // While a scoped company is still loading/unknown, show nothing rather than everyone's posts.
+  const activeCompanyId = scopedSlug ? (scoped?.id ?? "none") : companyId;
 
   const filtered = useMemo(
     () =>
       posts.filter(
         (p) =>
-          (companyId === "all" || p.company_id === companyId) &&
+          (activeCompanyId === "all" || p.company_id === activeCompanyId) &&
           (platform === "all" || p.platform === platform),
       ),
-    [posts, companyId, platform],
+    [posts, activeCompanyId, platform],
   );
 
   const byDay = useMemo(() => {
@@ -110,28 +118,42 @@ function PostedCalendarPage() {
     <main className="min-h-screen bg-background">
       <header className="flex flex-wrap items-center justify-between gap-3 border-b editorial-rule px-6 py-4">
         <div className="flex items-center gap-4">
-          <Link
-            to="/admin"
-            className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground"
-          >
-            ← Studio
-          </Link>
+          {scopedSlug ? (
+            <Link
+              to="/admin/companies/$slug"
+              params={{ slug: scopedSlug }}
+              className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground"
+            >
+              ← {scoped?.name ?? "Company"}
+            </Link>
+          ) : (
+            <Link
+              to="/admin"
+              className="text-xs uppercase tracking-widest text-muted-foreground hover:text-foreground"
+            >
+              ← Studio
+            </Link>
+          )}
           <div className="h-4 w-px bg-foreground/20" />
-          <span className="font-display text-xl">Posted calendar</span>
+          <span className="font-display text-xl">
+            {scopedSlug && scoped ? `${scoped.name} · Posted calendar` : "Posted calendar"}
+          </span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={companyId}
-            onChange={(e) => setCompanyId(e.target.value)}
-            className="rounded-sm border editorial-rule bg-background px-3 py-1.5 text-xs"
-          >
-            <option value="all">All companies</option>
-            {companies.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          {!scopedSlug && (
+            <select
+              value={companyId}
+              onChange={(e) => setCompanyId(e.target.value)}
+              className="rounded-sm border editorial-rule bg-background px-3 py-1.5 text-xs"
+            >
+              <option value="all">All companies</option>
+              {companies.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          )}
           <select
             value={platform}
             onChange={(e) => setPlatform(e.target.value as Platform | "all")}

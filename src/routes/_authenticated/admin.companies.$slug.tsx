@@ -298,6 +298,7 @@ function CompanyAdmin() {
         <div className="flex items-center gap-2">
           <Link
             to="/admin/calendar"
+            search={{ company: company.slug }}
             className="inline-flex items-center gap-1.5 rounded-sm border editorial-rule px-3 py-1.5 text-xs"
           >
             <CalendarDays className="h-3.5 w-3.5" /> Posted calendar
