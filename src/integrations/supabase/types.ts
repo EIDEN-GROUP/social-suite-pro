@@ -144,6 +144,8 @@ export type Database = {
           platform: Database["public"]["Enums"]["platform"];
           position: number;
           post_type: Database["public"]["Enums"]["post_type"];
+          post_url: string | null;
+          posted_at: string | null;
           scheduled_at: string | null;
           status: Database["public"]["Enums"]["approval_status"];
           updated_at: string;
@@ -161,6 +163,8 @@ export type Database = {
           platform: Database["public"]["Enums"]["platform"];
           position?: number;
           post_type?: Database["public"]["Enums"]["post_type"];
+          post_url?: string | null;
+          posted_at?: string | null;
           scheduled_at?: string | null;
           status?: Database["public"]["Enums"]["approval_status"];
           updated_at?: string;
@@ -178,6 +182,8 @@ export type Database = {
           platform?: Database["public"]["Enums"]["platform"];
           position?: number;
           post_type?: Database["public"]["Enums"]["post_type"];
+          post_url?: string | null;
+          posted_at?: string | null;
           scheduled_at?: string | null;
           status?: Database["public"]["Enums"]["approval_status"];
           updated_at?: string;
@@ -240,7 +246,7 @@ export type Database = {
     };
     Enums: {
       app_role: "superadmin" | "client";
-      approval_status: "pending" | "approved" | "rejected";
+      approval_status: "pending" | "approved" | "rejected" | "posted";
       platform: "instagram" | "tiktok" | "facebook" | "twitter" | "linkedin";
       post_type: "post" | "reel" | "story" | "carousel";
     };
@@ -369,7 +375,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["superadmin", "client"],
-      approval_status: ["pending", "approved", "rejected"],
+      approval_status: ["pending", "approved", "rejected", "posted"],
       platform: ["instagram", "tiktok", "facebook", "twitter", "linkedin"],
       post_type: ["post", "reel", "story", "carousel"],
     },

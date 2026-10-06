@@ -28,6 +28,8 @@ function normalizePost(row: Record<string, unknown>): Post {
   return {
     ...(row as unknown as Post),
     extra_media: Array.isArray(row.extra_media) ? (row.extra_media as string[]) : [],
+    post_url: typeof row.post_url === "string" ? (row.post_url as string) : null,
+    posted_at: typeof row.posted_at === "string" ? (row.posted_at as string) : null,
   };
 }
 
@@ -266,6 +268,7 @@ function CompanyAdmin() {
     pending: posts.filter((p) => p.status === "pending").length,
     approved: posts.filter((p) => p.status === "approved").length,
     rejected: posts.filter((p) => p.status === "rejected").length,
+    posted: posts.filter((p) => p.status === "posted").length,
   };
   const view = posts.filter((p) => inGroup(p, viewFilter));
 
@@ -398,6 +401,9 @@ function CompanyAdmin() {
               </span>
               <span>
                 <strong className="text-rose-700">{counts.rejected}</strong> rejected
+              </span>
+              <span>
+                <strong className="text-sky-700">{counts.posted}</strong> posted
               </span>
             </div>
           </div>
@@ -557,6 +563,7 @@ function CompanyAdmin() {
 
       {selected && (
         <PostDialog
+          key={selected.id}
           post={selected}
           mode="admin"
           open={!!selected}
@@ -623,7 +630,7 @@ function SortableTile({ post, onOpen }: { post: Post; onOpen: () => void }) {
       {...attributes}
       {...listeners}
       onClick={onOpen}
-      className={`group relative aspect-square touch-none overflow-hidden rounded border editorial-rule bg-foreground/5 ${post.status === "approved" ? "ring-2 ring-emerald-500" : post.status === "rejected" ? "ring-2 ring-rose-500" : ""}`}
+      className={`group relative aspect-square touch-none overflow-hidden rounded border editorial-rule bg-foreground/5 ${post.status === "approved" ? "ring-2 ring-emerald-500" : post.status === "rejected" ? "ring-2 ring-rose-500" : post.status === "posted" ? "ring-2 ring-sky-500" : ""}`}
     >
       <Media post={post} className="h-full w-full object-cover" />
       {(post.post_type === "reel" || post.media_type === "video") && (

@@ -13,6 +13,8 @@ function normalizePost(row: Record<string, unknown>): Post {
   return {
     ...(row as unknown as Post),
     extra_media: Array.isArray(row.extra_media) ? (row.extra_media as string[]) : [],
+    post_url: typeof row.post_url === "string" ? (row.post_url as string) : null,
+    posted_at: typeof row.posted_at === "string" ? (row.posted_at as string) : null,
   };
 }
 
@@ -109,11 +111,14 @@ export const clientDecide = createServerFn({ method: "POST" })
     // Ensure the post belongs to this company before touching it.
     const { data: post } = await supabaseAdmin
       .from("posts")
-      .select("id, company_id")
+      .select("id, company_id, status")
       .eq("id", data.postId)
       .maybeSingle();
     if (!post || post.company_id !== company.id) {
       throw new Error("That post is not part of this workspace.");
+    }
+    if (post.status === "posted") {
+      throw new Error("This post is already published.");
     }
 
     const { error } = await supabaseAdmin

@@ -25,6 +25,7 @@ import {
 function statusRing(status: string) {
   if (status === "approved") return "ring-2 ring-emerald-500";
   if (status === "rejected") return "ring-2 ring-rose-500";
+  if (status === "posted") return "ring-2 ring-sky-500";
   return "ring-1 ring-foreground/10";
 }
 
