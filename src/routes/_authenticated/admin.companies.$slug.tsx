@@ -6,6 +6,7 @@ import type { Company, Post, Platform, PostType, Highlight } from "@/lib/types";
 import { PLATFORMS, POST_TYPES } from "@/lib/types";
 import { PhonePreview } from "@/components/PhonePreview";
 import { PostDialog } from "@/components/PostDialog";
+import { MarkPostedDialog } from "@/components/MarkPostedDialog";
 import { safeStorageName, splitBySize, MAX_UPLOAD_MB } from "@/lib/utils";
 import {
   DndContext,
@@ -18,7 +19,7 @@ import {
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Media } from "@/components/Media";
-import { Trash2, Play, Images } from "lucide-react";
+import { Trash2, Play, Images, CalendarDays, Rocket } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/companies/$slug")({
   component: CompanyAdmin,
@@ -53,6 +54,7 @@ function CompanyAdmin() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
   const [selected, setSelected] = useState<Post | null>(null);
+  const [postedFor, setPostedFor] = useState<Post | null>(null);
   const [uploading, setUploading] = useState(false);
   const [addType, setAddType] = useState<PostType>("post");
   const [viewFilter, setViewFilter] = useState<ViewGroup>("posts");
@@ -271,6 +273,11 @@ function CompanyAdmin() {
     posted: posts.filter((p) => p.status === "posted").length,
   };
   const view = posts.filter((p) => inGroup(p, viewFilter));
+  // Approved / posted posts open the "mark as posted" modal; everything else the full editor.
+  const openPost = (p: Post) => {
+    if (p.status === "approved" || p.status === "posted") setPostedFor(p);
+    else setSelected(p);
+  };
 
   return (
     <main className="min-h-screen bg-background">
@@ -289,6 +296,12 @@ function CompanyAdmin() {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            to="/admin/calendar"
+            className="inline-flex items-center gap-1.5 rounded-sm border editorial-rule px-3 py-1.5 text-xs"
+          >
+            <CalendarDays className="h-3.5 w-3.5" /> Posted calendar
+          </Link>
           <a
             href={`/c/${company.slug}`}
             target="_blank"
@@ -323,7 +336,7 @@ function CompanyAdmin() {
                 company={company}
                 posts={posts}
                 highlights={highlights}
-                onTap={setSelected}
+                onTap={openPost}
               />
             </div>
           </div>
@@ -418,7 +431,7 @@ function CompanyAdmin() {
               <SortableContext items={view.map((p) => p.id)} strategy={rectSortingStrategy}>
                 <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                   {view.map((p) => (
-                    <SortableTile key={p.id} post={p} onOpen={() => setSelected(p)} />
+                    <SortableTile key={p.id} post={p} onOpen={() => openPost(p)} />
                   ))}
                 </div>
                 {view.length > 1 && (
@@ -561,6 +574,19 @@ function CompanyAdmin() {
         </section>
       </div>
 
+      {postedFor && (
+        <MarkPostedDialog
+          key={postedFor.id}
+          post={postedFor}
+          onClose={() => setPostedFor(null)}
+          onChanged={() => loadPosts(company.id, platform)}
+          onEditDetails={() => {
+            setSelected(postedFor);
+            setPostedFor(null);
+          }}
+        />
+      )}
+
       {selected && (
         <PostDialog
           key={selected.id}
@@ -642,6 +668,11 @@ function SortableTile({ post, onOpen }: { post: Post; onOpen: () => void }) {
       <span className="absolute bottom-1 right-1 rounded bg-background/90 px-1.5 py-0.5 text-[10px] uppercase tracking-widest">
         {post.status}
       </span>
+      {post.status === "approved" && (
+        <span className="absolute inset-x-0 bottom-0 hidden items-center justify-center gap-1 bg-sky-600/90 py-1 text-[10px] font-medium uppercase tracking-widest text-white group-hover:flex">
+          <Rocket className="h-3 w-3" /> Mark posted
+        </span>
+      )}
       <span className="absolute left-1 top-1 rounded bg-background/90 px-1.5 py-0.5 text-[9px] uppercase tracking-widest text-muted-foreground">
         {post.post_type}
       </span>

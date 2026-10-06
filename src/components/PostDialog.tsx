@@ -6,22 +6,6 @@ import { POST_TYPES } from "@/lib/types";
 import { safeStorageName, splitBySize, MAX_UPLOAD_MB } from "@/lib/utils";
 import { X } from "lucide-react";
 
-function toLocalInputValue(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function isValidHttpUrl(value: string): boolean {
-  try {
-    const u = new URL(value);
-    return u.protocol === "http:" || u.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
 interface Props {
   post: Post;
   mode: "admin" | "client";
@@ -39,12 +23,7 @@ export function PostDialog({ post, mode, open, onClose, onChanged, onDecide }: P
   const [extra, setExtra] = useState<string[]>(post.extra_media ?? []);
   const [mediaUrl, setMediaUrl] = useState(post.media_url);
   const [mediaType, setMediaType] = useState(post.media_type);
-  const [postUrl, setPostUrl] = useState(post.post_url ?? "");
-  const [postedAtInput, setPostedAtInput] = useState(() =>
-    post.posted_at ? toLocalInputValue(post.posted_at) : "",
-  );
   const [busy, setBusy] = useState(false);
-  const canSetLink = post.status === "approved" || post.status === "posted";
 
   if (!open) return null;
 
@@ -75,38 +54,14 @@ export function PostDialog({ post, mode, open, onClose, onChanged, onDecide }: P
 
   // ---- Admin actions --------------------------------------------------------
   async function saveAdmin() {
-    const trimmedUrl = postUrl.trim();
-    // Link can only be set once the post itself is approved.
-    if (canSetLink && trimmedUrl && !isValidHttpUrl(trimmedUrl)) {
-      return toast.error("Enter a valid live link starting with http(s)://");
-    }
     setBusy(true);
     try {
-      const patch: Record<string, unknown> = {
-        caption,
-        post_type: type,
-        extra_media: extra,
-      };
-      if (canSetLink) {
-        if (trimmedUrl) {
-          const postedAt = postedAtInput
-            ? new Date(postedAtInput).toISOString()
-            : (post.posted_at ?? new Date().toISOString());
-          patch.post_url = trimmedUrl;
-          patch.posted_at = postedAt;
-          patch.status = "posted";
-        } else if (post.status === "posted") {
-          // Clearing the link sends a posted item back to approved.
-          patch.post_url = null;
-          patch.posted_at = null;
-          patch.status = "approved";
-        }
-      }
-      const { error } = await supabase.from("posts").update(patch).eq("id", post.id);
+      const { error } = await supabase
+        .from("posts")
+        .update({ caption, post_type: type, extra_media: extra })
+        .eq("id", post.id);
       if (error) throw error;
-      toast.success(
-        canSetLink && trimmedUrl ? "Saved - marked as posted" : "Saved",
-      );
+      toast.success("Saved");
       onChanged();
     } catch (err) {
       toast.error((err as Error).message);
@@ -284,38 +239,6 @@ export function PostDialog({ post, mode, open, onClose, onChanged, onDecide }: P
                 />
                 + Add carousel media
               </label>
-              {canSetLink ? (
-                <div className="rounded border editorial-rule bg-foreground/[0.02] p-3">
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                    Live post link - saving marks as posted
-                  </p>
-                  <input
-                    type="url"
-                    value={postUrl}
-                    onChange={(e) => setPostUrl(e.target.value)}
-                    placeholder="https://instagram.com/p/..."
-                    className="mt-1.5 w-full rounded border editorial-rule bg-transparent p-2 text-sm"
-                  />
-                  <label className="mt-2 block">
-                    <span className="text-xs uppercase tracking-widest text-muted-foreground">
-                      Posted time
-                    </span>
-                    <input
-                      type="datetime-local"
-                      value={postedAtInput}
-                      onChange={(e) => setPostedAtInput(e.target.value)}
-                      className="mt-1 w-full rounded border editorial-rule bg-transparent p-2 text-sm"
-                    />
-                  </label>
-                  <p className="mt-1.5 text-[11px] text-muted-foreground">
-                    Clearing the link sends a posted item back to approved.
-                  </p>
-                </div>
-              ) : (
-                <p className="rounded border border-dashed editorial-rule p-3 text-center text-[11px] text-muted-foreground">
-                  Approve this post first - the live link can be added once it is approved.
-                </p>
-              )}
             </>
           ) : (
             post.caption && <p className="whitespace-pre-line text-sm">{post.caption}</p>

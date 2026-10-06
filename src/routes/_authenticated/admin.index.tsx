@@ -87,6 +87,12 @@ function AdminHome() {
         </Link>
         <div className="flex items-center gap-4 text-xs">
           <Link
+            to="/admin/calendar"
+            className="uppercase tracking-widest text-muted-foreground hover:text-foreground"
+          >
+            Posted calendar
+          </Link>
+          <Link
             to="/admin/superadmins"
             className="uppercase tracking-widest text-muted-foreground hover:text-foreground"
           >

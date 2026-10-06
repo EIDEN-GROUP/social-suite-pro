@@ -41,7 +41,11 @@ import {
   Share2,
   CalendarClock,
   ExternalLink,
+  BadgeCheck,
+  Copy,
+  X as CloseX,
 } from "lucide-react";
+import { formatPostedAt, linkHost, postedAgo } from "@/lib/posted";
 
 export const Route = createFileRoute("/c/$slug")({
   ssr: false,
@@ -1144,6 +1148,18 @@ function ReviewPhone({
           Tap any post to approve or request changes
         </p>
 
+        <LiveNotice
+          companyId={company.id}
+          posts={posts}
+          onOpen={(p) => {
+            setPlatform(p.platform);
+            setViewer({
+              list: posts.filter((x) => x.platform === p.platform && x.status === "posted"),
+              id: p.id,
+            });
+          }}
+        />
+
         {/* Phone */}
         <div
           className="relative w-full max-w-[390px] overflow-hidden rounded-[44px] border-[11px] border-neutral-900 bg-background shadow-2xl"
@@ -1181,6 +1197,126 @@ function ReviewPhone({
         </div>
       </div>
     </main>
+  );
+}
+
+function LiveNotice({
+  companyId,
+  posts,
+  onOpen,
+}: {
+  companyId: string;
+  posts: Post[];
+  onOpen: (p: Post) => void;
+}) {
+  const storageKey = `smim-seen-posted-${companyId}`;
+  const [seen, setSeen] = useState<string[]>([]);
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      setSeen(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      setSeen([]);
+    }
+  }, [storageKey]);
+
+  const live = posts
+    .filter((p) => p.status === "posted")
+    .sort((a, b) => (b.posted_at ?? "").localeCompare(a.posted_at ?? ""));
+  if (live.length === 0 || hidden) return null;
+
+  function markSeen(ids: string[]) {
+    const next = Array.from(new Set([...seen, ...ids]));
+    setSeen(next);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+    } catch {
+      /* storage unavailable - banner just shows "new" again next visit */
+    }
+  }
+
+  const unseen = live.filter((p) => !seen.includes(p.id)).length;
+  const shown = live.slice(0, 3);
+
+  return (
+    <div className="w-full max-w-[390px] overflow-hidden rounded-2xl border border-sky-500/30 bg-gradient-to-br from-sky-500/10 via-background to-emerald-500/10 shadow-sm">
+      <div className="flex items-center justify-between gap-2 px-4 pt-3">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-sky-500" />
+          </span>
+          <p className="text-xs font-semibold uppercase tracking-widest text-sky-700">
+            {unseen > 0
+              ? `${unseen} new post${unseen > 1 ? "s" : ""} live`
+              : `${live.length} post${live.length > 1 ? "s" : ""} live`}
+          </p>
+        </div>
+        <button
+          aria-label="Dismiss"
+          onClick={() => {
+            markSeen(live.map((p) => p.id));
+            setHidden(true);
+          }}
+          className="rounded-full p-1 text-muted-foreground hover:bg-foreground/5"
+        >
+          <CloseX className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <ul className="divide-y divide-foreground/5 px-2 pb-2 pt-1">
+        {shown.map((p) => (
+          <li key={p.id} className="flex items-center gap-3 rounded-xl p-2">
+            <button
+              onClick={() => {
+                markSeen([p.id]);
+                onOpen(p);
+              }}
+              className="flex min-w-0 flex-1 items-center gap-3 text-left"
+            >
+              <span className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-foreground/10 bg-foreground/5">
+                <Media post={p} className="h-full w-full object-cover" />
+              </span>
+              <span className="min-w-0">
+                <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+                  {p.platform} · {p.post_type}
+                  {!seen.includes(p.id) && (
+                    <span className="rounded-full bg-sky-500 px-1.5 py-px text-[9px] font-semibold text-white">
+                      New
+                    </span>
+                  )}
+                </span>
+                <span className="block truncate text-xs font-medium">
+                  {p.posted_at ? formatPostedAt(p.posted_at) : "Posted"}
+                </span>
+                {p.posted_at && (
+                  <span className="block text-[11px] text-muted-foreground">
+                    {postedAgo(p.posted_at)}
+                  </span>
+                )}
+              </span>
+            </button>
+            {p.post_url && (
+              <a
+                href={p.post_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => markSeen([p.id])}
+                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-sky-500"
+              >
+                View <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </li>
+        ))}
+      </ul>
+      {live.length > shown.length && (
+        <p className="border-t border-foreground/5 px-4 py-2 text-center text-[11px] text-muted-foreground">
+          +{live.length - shown.length} more posted - tap any "posted" tile in the feed
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -1865,27 +2001,52 @@ function PostViewer({
           <span className="text-[10px] uppercase tracking-widest text-white/40">
             {post.platform} · {post.post_type}
           </span>
-          {post.posted_at && (
-            <span className="text-[10px] tracking-wide text-white/50">
-              Posted {new Date(post.posted_at).toLocaleString()}
-            </span>
-          )}
         </div>
         {isPosted ? (
-          <div>
+          <div className="rounded-xl border border-sky-400/30 bg-gradient-to-br from-sky-500/20 to-emerald-500/10 p-3">
+            <div className="flex items-start gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-sky-500 text-white">
+                <BadgeCheck className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">Your post is live</p>
+                {post.posted_at ? (
+                  <p className="text-xs text-white/70">
+                    Posted {formatPostedAt(post.posted_at)}
+                    <span className="text-white/40"> · {postedAgo(post.posted_at)}</span>
+                  </p>
+                ) : (
+                  <p className="text-xs text-white/70">Published on {post.platform}</p>
+                )}
+              </div>
+            </div>
             {post.post_url ? (
-              <a
-                href={post.post_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex w-full items-center justify-center gap-2 rounded-md bg-sky-500 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-400"
-              >
-                <ExternalLink className="h-4 w-4" />
-                Check live post
-              </a>
+              <div className="mt-3 flex gap-2">
+                <a
+                  href={post.post_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg bg-sky-500 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-400"
+                >
+                  <ExternalLink className="h-4 w-4 shrink-0" />
+                  <span className="truncate">Open on {linkHost(post.post_url)}</span>
+                </a>
+                <button
+                  aria-label="Copy link"
+                  onClick={() => {
+                    navigator.clipboard
+                      ?.writeText(post.post_url ?? "")
+                      .then(() => toast.success("Link copied"))
+                      .catch(() => toast.error("Could not copy the link"));
+                  }}
+                  className="grid w-11 place-items-center rounded-lg border border-white/20 text-white/80 hover:bg-white/10"
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+              </div>
             ) : (
-              <p className="rounded-md bg-white/5 px-3 py-2.5 text-center text-xs text-white/60">
-                This post is marked as posted.
+              <p className="mt-3 rounded-lg bg-white/5 px-3 py-2 text-center text-xs text-white/60">
+                The studio hasn't added the link yet.
               </p>
             )}
             {post.client_comment && (
