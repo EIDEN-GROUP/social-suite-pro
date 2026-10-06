@@ -1298,7 +1298,7 @@ function LiveNotice({
             </span>
           )}
           <ChevronDown
-            className={`h-4 w-4 shrink-0 text-muted-foreground transition ${isOpen ? "rotate-180" : ""} ${isOpen ? "ml-auto" : ""}`}
+            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300 ${isOpen ? "rotate-180" : ""} ${isOpen ? "ml-auto" : ""}`}
           />
         </button>
         <button
@@ -1313,7 +1313,14 @@ function LiveNotice({
         </button>
       </div>
 
-      {isOpen && (
+      {/* grid-rows 0fr -> 1fr animates height without measuring; content stays mounted */}
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+        aria-hidden={!isOpen}
+      >
+        <div
+          className={`overflow-hidden transition-[visibility] duration-300 ${isOpen ? "visible" : "invisible"}`}
+        >
         <div className="border-t border-foreground/5">
           <div className="max-h-64 overflow-y-auto px-2 pb-2">
             {groups.map((g) => (
@@ -1386,7 +1393,8 @@ function LiveNotice({
             </button>
           )}
         </div>
-      )}
+        </div>
+      </div>
     </div>
   );
 }
