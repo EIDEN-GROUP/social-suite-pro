@@ -11,6 +11,7 @@ import {
   type CompanyBranding,
 } from "@/lib/client.functions";
 import { Media } from "@/components/Media";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import lunjaWordmark from "@/assets/lunja-wordmark-white.png";
 import {
   Lock,
@@ -42,6 +43,7 @@ import {
   CalendarClock,
   ExternalLink,
   BadgeCheck,
+  Bell,
   Copy,
   X as CloseX,
 } from "lucide-react";
@@ -1098,6 +1100,17 @@ function ReviewPhone({
             <strong className="text-rose-600">{counts.rejected}</strong> changes ·{" "}
             <strong className="text-sky-600">{counts.posted}</strong> posted
           </span>
+          <PostedBell
+            companyId={company.id}
+            posts={posts}
+            onOpen={(p) => {
+              setPlatform(p.platform);
+              setViewer({
+                list: posts.filter((x) => x.platform === p.platform && x.status === "posted"),
+                id: p.id,
+              });
+            }}
+          />
           <button onClick={onLogout} className="rounded-sm border editorial-rule px-3 py-1.5">
             Sign out
           </button>
@@ -1149,18 +1162,6 @@ function ReviewPhone({
           Tap any post to approve or request changes
         </p>
 
-        <LiveNotice
-          companyId={company.id}
-          posts={posts}
-          onOpen={(p) => {
-            setPlatform(p.platform);
-            setViewer({
-              list: posts.filter((x) => x.platform === p.platform && x.status === "posted"),
-              id: p.id,
-            });
-          }}
-        />
-
         {/* Phone */}
         <div
           className="relative w-full max-w-[390px] overflow-hidden rounded-[44px] border-[11px] border-neutral-900 bg-background shadow-2xl"
@@ -1209,10 +1210,10 @@ function dayLabel(iso: string): string {
 }
 
 /**
- * "Your posts are live" notice. Stays compact however many posts are marked as posted:
- * a one-line summary with stacked thumbnails that expands into a scrollable list grouped by day.
+ * Header bell: lists everything the studio has marked as posted (grouped by day), with a badge
+ * for items the client hasn't looked at yet. Keeps the page itself clean however many there are.
  */
-function LiveNotice({
+function PostedBell({
   companyId,
   posts,
   onOpen,
@@ -1223,8 +1224,7 @@ function LiveNotice({
 }) {
   const storageKey = `smim-seen-posted-${companyId}`;
   const [seen, setSeen] = useState<string[]>([]);
-  const [hidden, setHidden] = useState(false);
-  const [expanded, setExpanded] = useState<boolean | null>(null);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -1238,7 +1238,7 @@ function LiveNotice({
   const live = posts
     .filter((p) => p.status === "posted")
     .sort((a, b) => (b.posted_at ?? "").localeCompare(a.posted_at ?? ""));
-  if (live.length === 0 || hidden) return null;
+  if (live.length === 0) return null;
 
   function markSeen(ids: string[]) {
     const next = Array.from(new Set([...seen, ...ids]));
@@ -1246,13 +1246,11 @@ function LiveNotice({
     try {
       localStorage.setItem(storageKey, JSON.stringify(next));
     } catch {
-      /* storage unavailable - banner just shows "new" again next visit */
+      /* storage unavailable - badge just shows again next visit */
     }
   }
 
-  const unseen = live.filter((p) => !seen.includes(p.id));
-  // A single post shows its row right away; several start collapsed.
-  const isOpen = expanded ?? live.length === 1;
+  const unseen = live.filter((p) => !seen.includes(p.id)).length;
   const groups: { label: string; items: Post[] }[] = [];
   for (const p of live) {
     const label = p.posted_at ? dayLabel(p.posted_at) : "Posted";
@@ -1260,142 +1258,143 @@ function LiveNotice({
     if (last && last.label === label) last.items.push(p);
     else groups.push({ label, items: [p] });
   }
-  const headline =
-    unseen.length > 0
-      ? `${unseen.length} new post${unseen.length > 1 ? "s" : ""} live`
-      : `${live.length} post${live.length > 1 ? "s" : ""} live`;
 
   return (
-    <div className="w-full max-w-[390px] overflow-hidden rounded-2xl border border-sky-500/30 bg-gradient-to-br from-sky-500/10 via-background to-emerald-500/10 shadow-sm">
-      <div className="flex items-center gap-2 px-3 py-2.5">
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
         <button
-          onClick={() => setExpanded(!isOpen)}
-          aria-expanded={isOpen}
-          className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
+          aria-label={`Posted content (${live.length})`}
+          title="Posted content"
+          className={`relative rounded-full border p-2 transition ${open ? "border-sky-500 bg-sky-500/10 text-sky-700" : "editorial-rule text-foreground hover:bg-foreground/5"}`}
         >
-          <span className="relative flex h-2.5 w-2.5 shrink-0">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-sky-500" />
-          </span>
-          <span className="truncate text-xs font-semibold uppercase tracking-widest text-sky-700">
-            {headline}
-          </span>
-          {!isOpen && (
-            <span className="ml-auto flex shrink-0 -space-x-2">
-              {live.slice(0, 4).map((p) => (
-                <span
-                  key={p.id}
-                  className="h-7 w-7 overflow-hidden rounded-full border-2 border-background bg-foreground/5"
-                >
-                  <Media post={p} className="h-full w-full object-cover" />
-                </span>
-              ))}
-              {live.length > 4 && (
-                <span className="grid h-7 w-7 place-items-center rounded-full border-2 border-background bg-foreground/10 text-[10px] font-medium">
-                  +{live.length - 4}
-                </span>
-              )}
+          <Bell className="h-4 w-4" />
+          {unseen > 0 ? (
+            <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-sky-500 px-1 text-[10px] font-semibold leading-none text-white">
+              {unseen}
             </span>
+          ) : (
+            <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-sky-500/60" />
           )}
-          <ChevronDown
-            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300 ${isOpen ? "rotate-180" : ""} ${isOpen ? "ml-auto" : ""}`}
-          />
         </button>
-        <button
-          aria-label="Dismiss"
-          onClick={() => {
-            markSeen(live.map((p) => p.id));
-            setHidden(true);
-          }}
-          className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-foreground/5"
-        >
-          <CloseX className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
-      {/* grid-rows 0fr -> 1fr animates height without measuring; content stays mounted */}
-      <div
-        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
-        aria-hidden={!isOpen}
-      >
-        <div
-          className={`overflow-hidden transition-[visibility] duration-300 ${isOpen ? "visible" : "invisible"}`}
-        >
-        <div className="border-t border-foreground/5">
-          <div className="max-h-64 overflow-y-auto px-2 pb-2">
-            {groups.map((g) => (
-              <div key={g.label}>
-                <p className="sticky top-0 z-10 bg-background/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground backdrop-blur">
-                  {g.label} · {g.items.length}
-                </p>
-                <ul>
-                  {g.items.map((p) => {
-                    const future = p.posted_at
-                      ? new Date(p.posted_at).getTime() > Date.now()
-                      : false;
-                    return (
-                      <li key={p.id} className="flex items-center gap-3 rounded-xl p-2">
-                        <button
-                          onClick={() => {
-                            markSeen([p.id]);
-                            onOpen(p);
-                          }}
-                          className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                        >
-                          <span className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-foreground/10 bg-foreground/5">
-                            <Media post={p} className="h-full w-full object-cover" />
-                          </span>
-                          <span className="min-w-0">
-                            <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
-                              {p.platform} · {p.post_type}
-                              {!seen.includes(p.id) && (
-                                <span className="rounded-full bg-sky-500 px-1.5 py-px text-[9px] font-semibold text-white">
-                                  New
-                                </span>
-                              )}
-                            </span>
-                            <span className="block truncate text-xs font-medium">
-                              {p.posted_at ? format(new Date(p.posted_at), "p") : "Posted"}
-                              {future && <span className="text-sky-700"> · scheduled</span>}
-                            </span>
-                            {p.posted_at && (
-                              <span className="block text-[11px] text-muted-foreground">
-                                {future ? "Goes live " : ""}
-                                {postedAgo(p.posted_at)}
-                              </span>
-                            )}
-                          </span>
-                        </button>
-                        {p.post_url && (
-                          <a
-                            href={p.post_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={() => markSeen([p.id])}
-                            className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-sky-500"
-                          >
-                            View <ExternalLink className="h-3 w-3" />
-                          </a>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-[340px] max-w-[calc(100vw-2rem)] p-0">
+        <div className="flex items-center justify-between gap-2 border-b border-foreground/10 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <BadgeCheck className="h-4 w-4 text-sky-600" />
+            <p className="text-sm font-semibold">Posted</p>
+            <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold text-sky-700">
+              {live.length}
+            </span>
           </div>
-          {unseen.length > 0 && (
+          {unseen > 0 && (
             <button
               onClick={() => markSeen(live.map((p) => p.id))}
-              className="flex w-full items-center justify-center gap-1.5 border-t border-foreground/5 py-2 text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground"
+              className="inline-flex items-center gap-1 text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground"
             >
-              <Check className="h-3 w-3" /> Mark all as seen
+              <Check className="h-3 w-3" /> Mark all seen
             </button>
           )}
         </div>
+        <div className="max-h-[60vh] overflow-y-auto px-2 pb-2">
+          {groups.map((g) => (
+            <div key={g.label}>
+              <p className="sticky top-0 z-10 bg-popover/95 px-2 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground backdrop-blur">
+                {g.label} · {g.items.length}
+              </p>
+              <ul>
+                {g.items.map((p) => {
+                  const future = p.posted_at ? new Date(p.posted_at).getTime() > Date.now() : false;
+                  return (
+                    <li key={p.id} className="flex items-center gap-3 rounded-xl p-2 hover:bg-foreground/[0.03]">
+                      <button
+                        onClick={() => {
+                          markSeen([p.id]);
+                          setOpen(false);
+                          onOpen(p);
+                        }}
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                      >
+                        <span className="h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-foreground/10 bg-foreground/5">
+                          <Media post={p} className="h-full w-full object-cover" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">
+                            {p.platform} · {p.post_type}
+                            {!seen.includes(p.id) && (
+                              <span className="rounded-full bg-sky-500 px-1.5 py-px text-[9px] font-semibold text-white">
+                                New
+                              </span>
+                            )}
+                          </span>
+                          <span className="block truncate text-xs font-medium">
+                            {p.posted_at ? format(new Date(p.posted_at), "p") : "Posted"}
+                            {future && <span className="text-sky-700"> · scheduled</span>}
+                          </span>
+                          {p.posted_at && (
+                            <span className="block text-[11px] text-muted-foreground">
+                              {future ? "Goes live " : ""}
+                              {postedAgo(p.posted_at)}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                      {p.post_url && (
+                        <a
+                          href={p.post_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => markSeen([p.id])}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-sky-500"
+                        >
+                          View <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
         </div>
-      </div>
-    </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/**
+ * Status marker for preview tiles. Posted items get a sky ring + check badge (tile) or a "Posted"
+ * pill (inline); everything else keeps the small status dot.
+ */
+function StatusMark({
+  status,
+  variant,
+  pos = "",
+}: {
+  status: string;
+  variant: "tile" | "inline";
+  /** Absolute-position classes for the tile variant, e.g. "bottom-1 left-1". */
+  pos?: string;
+}) {
+  if (status === "posted") {
+    return variant === "tile" ? (
+      <>
+        <span className="pointer-events-none absolute inset-0 ring-[3px] ring-inset ring-sky-500" />
+        <span
+          className={`absolute ${pos} grid h-5 w-5 place-items-center rounded-full bg-sky-500 text-white shadow`}
+        >
+          <BadgeCheck className="h-3.5 w-3.5" />
+        </span>
+      </>
+    ) : (
+      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-semibold text-sky-700">
+        <BadgeCheck className="h-3 w-3" /> Posted
+      </span>
+    );
+  }
+  return variant === "tile" ? (
+    <span className={`absolute ${pos} h-2 w-2 rounded-full ${statusDot(status)}`} />
+  ) : (
+    <span className={`h-2 w-2 rounded-full ${statusDot(status)}`} />
   );
 }
 
@@ -1497,9 +1496,7 @@ function Instagram({
                 {p.post_type === "carousel" && (
                   <Images className="absolute right-1 top-1 h-3.5 w-3.5 text-white drop-shadow" />
                 )}
-                <span
-                  className={`absolute bottom-1 left-1 h-2 w-2 rounded-full ${statusDot(p.status)}`}
-                />
+                <StatusMark status={p.status} variant="tile" pos="bottom-1 left-1" />
               </button>
             ))}
           </div>
@@ -1745,9 +1742,7 @@ function FeedPhone({
               >
                 <Media post={p} className="h-full w-full object-cover" muted />
                 <Play className="absolute left-1 bottom-1 h-3.5 w-3.5 fill-white text-white drop-shadow" />
-                <span
-                  className={`absolute right-1 top-1 h-2 w-2 rounded-full ${statusDot(p.status)}`}
-                />
+                <StatusMark status={p.status} variant="tile" pos="right-1 top-1" />
               </button>
             ))}
           </div>
@@ -1764,7 +1759,9 @@ function FeedPhone({
                   <div className="flex items-center gap-1 text-sm">
                     <span className="font-semibold">{company.name}</span>
                     <span className="text-muted-foreground">@{handle}</span>
-                    <span className={`ml-auto h-2 w-2 rounded-full ${statusDot(p.status)}`} />
+                    <span className="ml-auto">
+                      <StatusMark status={p.status} variant="inline" />
+                    </span>
                   </div>
                   {p.caption && (
                     <div className="mt-0.5 whitespace-pre-line text-sm">{p.caption}</div>
@@ -1799,7 +1796,7 @@ function FeedPhone({
                       {platform === "linkedin" ? "Promoted · 1h" : "Sponsored · 🌐"}
                     </div>
                   </div>
-                  <span className={`h-2 w-2 rounded-full ${statusDot(p.status)}`} />
+                  <StatusMark status={p.status} variant="inline" />
                   <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                 </div>
                 {p.caption && <div className="px-3 pb-2 text-sm">{p.caption}</div>}
