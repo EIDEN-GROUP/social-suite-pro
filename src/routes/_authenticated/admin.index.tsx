@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { CalendarDays, ExternalLink, LayoutGrid, List, Search } from "lucide-react";
 import type { Company, ApprovalStatus } from "@/lib/types";
 import { postedAgo } from "@/lib/posted";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: AdminHome,
@@ -139,6 +140,25 @@ function AdminHome() {
           SMimulator · Studio
         </Link>
         <div className="flex items-center gap-4 text-xs">
+          <NotificationBell />
+          <Link
+            to="/admin/social-accounts"
+            className="uppercase tracking-widest text-muted-foreground hover:text-foreground"
+          >
+            Social accounts
+          </Link>
+          <Link
+            to="/admin/connect"
+            className="uppercase tracking-widest text-muted-foreground hover:text-foreground"
+          >
+            Connect
+          </Link>
+          <Link
+            to="/admin/publishing"
+            className="uppercase tracking-widest text-muted-foreground hover:text-foreground"
+          >
+            Publishing
+          </Link>
           <Link
             to="/admin/calendar"
             className="uppercase tracking-widest text-muted-foreground hover:text-foreground"

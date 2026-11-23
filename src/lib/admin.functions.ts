@@ -33,14 +33,26 @@ export const signUpStudioAdmin = createServerFn({ method: "POST" })
     if (createErr || !created.user)
       throw new Error(createErr?.message ?? "Failed to create studio account");
 
-    // The DB trigger assigns superadmin to the first user; ensure it exists either way.
+    // The DB trigger assigns superadmin to the first user atomically (advisory
+    // lock). If a concurrent request won the race, this user got no role - so
+    // roll it back instead of creating a second superadmin.
     const { data: existing } = await supabaseAdmin
       .from("user_roles")
       .select("id")
       .eq("user_id", created.user.id)
       .eq("role", "superadmin")
       .maybeSingle();
+
     if (!existing) {
+      const { count: afterCount } = await supabaseAdmin
+        .from("user_roles")
+        .select("*", { count: "exact", head: true })
+        .eq("role", "superadmin");
+      if ((afterCount ?? 0) > 0) {
+        // Someone else claimed the studio first - undo our user.
+        await supabaseAdmin.auth.admin.deleteUser(created.user.id);
+        throw new Error("The studio account already exists. Please sign in.");
+      }
       const { error: roleErr } = await supabaseAdmin
         .from("user_roles")
         .insert({ user_id: created.user.id, role: "superadmin" });
@@ -63,6 +75,10 @@ export const createSuperadmin = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    // Server functions are publicly reachable; must verify the caller is an
+    // existing superadmin before creating accounts with the service-role client.
+    await (await import("@/lib/server-auth.server")).requireSuperadmin();
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Check if a user with this email already exists

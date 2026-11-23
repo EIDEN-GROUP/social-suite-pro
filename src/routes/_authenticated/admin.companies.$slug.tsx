@@ -19,6 +19,7 @@ import {
 import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Media } from "@/components/Media";
+import { ClientSocialAccounts } from "@/components/social/ClientSocialAccounts";
 import { Trash2, Play, Images, CalendarDays, Rocket } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/companies/$slug")({
@@ -570,6 +571,10 @@ function CompanyAdmin() {
                 highlights={highlights}
                 onChanged={() => loadHighlights(company.id)}
               />
+            </div>
+
+            <div className="md:col-span-2">
+              <ClientSocialAccounts company={company} />
             </div>
           </div>
         </section>

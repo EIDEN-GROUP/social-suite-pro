@@ -16,8 +16,14 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminCalendarRouteImport } from './routes/_authenticated/admin.calendar'
+import { Route as AuthenticatedAdminConnectRouteImport } from './routes/_authenticated/admin.connect'
+import { Route as AuthenticatedAdminSocialAccountsRouteImport } from './routes/_authenticated/admin.social-accounts'
 import { Route as AuthenticatedAdminSuperadminsRouteImport } from './routes/_authenticated/admin.superadmins'
+import { Route as ApiComposioWebhookRouteImport } from './routes/api/composio/webhook'
+import { Route as ApiCronPublishRouteImport } from './routes/api/cron/publish'
 import { Route as AuthenticatedAdminCompaniesSlugRouteImport } from './routes/_authenticated/admin.companies.$slug'
+import { Route as AuthenticatedAdminPublishingIndexRouteImport } from './routes/_authenticated/admin.publishing.index'
+import { Route as AuthenticatedAdminPublishingIdRouteImport } from './routes/_authenticated/admin.publishing.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -54,16 +60,50 @@ const AuthenticatedAdminCalendarRoute =
     path: '/calendar',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminConnectRoute =
+  AuthenticatedAdminConnectRouteImport.update({
+    id: '/connect',
+    path: '/connect',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSocialAccountsRoute =
+  AuthenticatedAdminSocialAccountsRouteImport.update({
+    id: '/social-accounts',
+    path: '/social-accounts',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminSuperadminsRoute =
   AuthenticatedAdminSuperadminsRouteImport.update({
     id: '/superadmins',
     path: '/superadmins',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const ApiComposioWebhookRoute = ApiComposioWebhookRouteImport.update({
+  id: '/api/composio/webhook',
+  path: '/api/composio/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCronPublishRoute = ApiCronPublishRouteImport.update({
+  id: '/api/cron/publish',
+  path: '/api/cron/publish',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminCompaniesSlugRoute =
   AuthenticatedAdminCompaniesSlugRouteImport.update({
     id: '/companies/$slug',
     path: '/companies/$slug',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPublishingIndexRoute =
+  AuthenticatedAdminPublishingIndexRouteImport.update({
+    id: '/publishing/',
+    path: '/publishing/',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPublishingIdRoute =
+  AuthenticatedAdminPublishingIdRouteImport.update({
+    id: '/publishing/$id',
+    path: '/publishing/$id',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 
@@ -73,18 +113,30 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/c/$slug': typeof CSlugRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
+  '/admin/connect': typeof AuthenticatedAdminConnectRoute
+  '/admin/social-accounts': typeof AuthenticatedAdminSocialAccountsRoute
   '/admin/superadmins': typeof AuthenticatedAdminSuperadminsRoute
+  '/api/composio/webhook': typeof ApiComposioWebhookRoute
+  '/api/cron/publish': typeof ApiCronPublishRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/companies/$slug': typeof AuthenticatedAdminCompaniesSlugRoute
+  '/admin/publishing/$id': typeof AuthenticatedAdminPublishingIdRoute
+  '/admin/publishing/': typeof AuthenticatedAdminPublishingIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/c/$slug': typeof CSlugRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
+  '/admin/connect': typeof AuthenticatedAdminConnectRoute
+  '/admin/social-accounts': typeof AuthenticatedAdminSocialAccountsRoute
   '/admin/superadmins': typeof AuthenticatedAdminSuperadminsRoute
+  '/api/composio/webhook': typeof ApiComposioWebhookRoute
+  '/api/cron/publish': typeof ApiCronPublishRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/companies/$slug': typeof AuthenticatedAdminCompaniesSlugRoute
+  '/admin/publishing/$id': typeof AuthenticatedAdminPublishingIdRoute
+  '/admin/publishing': typeof AuthenticatedAdminPublishingIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -94,9 +146,15 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/c/$slug': typeof CSlugRoute
   '/_authenticated/admin/calendar': typeof AuthenticatedAdminCalendarRoute
+  '/_authenticated/admin/connect': typeof AuthenticatedAdminConnectRoute
+  '/_authenticated/admin/social-accounts': typeof AuthenticatedAdminSocialAccountsRoute
   '/_authenticated/admin/superadmins': typeof AuthenticatedAdminSuperadminsRoute
+  '/api/composio/webhook': typeof ApiComposioWebhookRoute
+  '/api/cron/publish': typeof ApiCronPublishRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/companies/$slug': typeof AuthenticatedAdminCompaniesSlugRoute
+  '/_authenticated/admin/publishing/$id': typeof AuthenticatedAdminPublishingIdRoute
+  '/_authenticated/admin/publishing/': typeof AuthenticatedAdminPublishingIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -106,18 +164,30 @@ export interface FileRouteTypes {
     | '/admin'
     | '/c/$slug'
     | '/admin/calendar'
+    | '/admin/connect'
+    | '/admin/social-accounts'
     | '/admin/superadmins'
+    | '/api/composio/webhook'
+    | '/api/cron/publish'
     | '/admin/'
     | '/admin/companies/$slug'
+    | '/admin/publishing/$id'
+    | '/admin/publishing/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/c/$slug'
     | '/admin/calendar'
+    | '/admin/connect'
+    | '/admin/social-accounts'
     | '/admin/superadmins'
+    | '/api/composio/webhook'
+    | '/api/cron/publish'
     | '/admin'
     | '/admin/companies/$slug'
+    | '/admin/publishing/$id'
+    | '/admin/publishing'
   id:
     | '__root__'
     | '/'
@@ -126,9 +196,15 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/c/$slug'
     | '/_authenticated/admin/calendar'
+    | '/_authenticated/admin/connect'
+    | '/_authenticated/admin/social-accounts'
     | '/_authenticated/admin/superadmins'
+    | '/api/composio/webhook'
+    | '/api/cron/publish'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/companies/$slug'
+    | '/_authenticated/admin/publishing/$id'
+    | '/_authenticated/admin/publishing/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -136,6 +212,8 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   CSlugRoute: typeof CSlugRoute
+  ApiComposioWebhookRoute: typeof ApiComposioWebhookRoute
+  ApiCronPublishRoute: typeof ApiCronPublishRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -189,12 +267,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCalendarRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/connect': {
+      id: '/_authenticated/admin/connect'
+      path: '/connect'
+      fullPath: '/admin/connect'
+      preLoaderRoute: typeof AuthenticatedAdminConnectRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/social-accounts': {
+      id: '/_authenticated/admin/social-accounts'
+      path: '/social-accounts'
+      fullPath: '/admin/social-accounts'
+      preLoaderRoute: typeof AuthenticatedAdminSocialAccountsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/superadmins': {
       id: '/_authenticated/admin/superadmins'
       path: '/superadmins'
       fullPath: '/admin/superadmins'
       preLoaderRoute: typeof AuthenticatedAdminSuperadminsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/api/composio/webhook': {
+      id: '/api/composio/webhook'
+      path: '/api/composio/webhook'
+      fullPath: '/api/composio/webhook'
+      preLoaderRoute: typeof ApiComposioWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/cron/publish': {
+      id: '/api/cron/publish'
+      path: '/api/cron/publish'
+      fullPath: '/api/cron/publish'
+      preLoaderRoute: typeof ApiCronPublishRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/companies/$slug': {
       id: '/_authenticated/admin/companies/$slug'
@@ -203,21 +309,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCompaniesSlugRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/publishing/': {
+      id: '/_authenticated/admin/publishing/'
+      path: '/publishing'
+      fullPath: '/admin/publishing/'
+      preLoaderRoute: typeof AuthenticatedAdminPublishingIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/publishing/$id': {
+      id: '/_authenticated/admin/publishing/$id'
+      path: '/publishing/$id'
+      fullPath: '/admin/publishing/$id'
+      preLoaderRoute: typeof AuthenticatedAdminPublishingIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCalendarRoute: typeof AuthenticatedAdminCalendarRoute
+  AuthenticatedAdminConnectRoute: typeof AuthenticatedAdminConnectRoute
+  AuthenticatedAdminSocialAccountsRoute: typeof AuthenticatedAdminSocialAccountsRoute
   AuthenticatedAdminSuperadminsRoute: typeof AuthenticatedAdminSuperadminsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminCompaniesSlugRoute: typeof AuthenticatedAdminCompaniesSlugRoute
+  AuthenticatedAdminPublishingIdRoute: typeof AuthenticatedAdminPublishingIdRoute
+  AuthenticatedAdminPublishingIndexRoute: typeof AuthenticatedAdminPublishingIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminCalendarRoute: AuthenticatedAdminCalendarRoute,
+  AuthenticatedAdminConnectRoute: AuthenticatedAdminConnectRoute,
+  AuthenticatedAdminSocialAccountsRoute: AuthenticatedAdminSocialAccountsRoute,
   AuthenticatedAdminSuperadminsRoute: AuthenticatedAdminSuperadminsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminCompaniesSlugRoute: AuthenticatedAdminCompaniesSlugRoute,
+  AuthenticatedAdminPublishingIdRoute: AuthenticatedAdminPublishingIdRoute,
+  AuthenticatedAdminPublishingIndexRoute:
+    AuthenticatedAdminPublishingIndexRoute,
 }
 
 const AuthenticatedAdminRouteWithChildren =
@@ -239,6 +368,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   CSlugRoute: CSlugRoute,
+  ApiComposioWebhookRoute: ApiComposioWebhookRoute,
+  ApiCronPublishRoute: ApiCronPublishRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -34,3 +34,7 @@ dist-ssr
 
 # Local env secrets
 .env
+
+.playwright-images
+.playwright-mcp
+.twino

@@ -111,7 +111,7 @@ export const clientDecide = createServerFn({ method: "POST" })
     // Ensure the post belongs to this company before touching it.
     const { data: post } = await supabaseAdmin
       .from("posts")
-      .select("id, company_id, status")
+      .select("id, company_id, status, content_version")
       .eq("id", data.postId)
       .maybeSingle();
     if (!post || post.company_id !== company.id) {
@@ -127,9 +127,29 @@ export const clientDecide = createServerFn({ method: "POST" })
         status: data.status,
         client_comment: data.comment?.trim() || null,
         decided_at: new Date().toISOString(),
+        // Snapshot the version the client approved; publishing verifies it matches.
+        approved_content_version: data.status === "approved" ? post.content_version : null,
+        publish_state: null,
       })
       .eq("id", data.postId);
     if (error) throw new Error(error.message);
+
+    // Notify the internal team (deduped per post+version+decision).
+    await supabaseAdmin.from("notifications").upsert(
+      {
+        type: data.status === "approved" ? "approval_received" : "changes_requested",
+        title:
+          data.status === "approved"
+            ? `${company.name} approved a post`
+            : `${company.name} requested changes`,
+        body: data.comment?.trim() || null,
+        company_id: company.id,
+        post_id: data.postId,
+        link: `/admin/companies/${company.slug}`,
+        dedupe_key: `${data.status}:${data.postId}:${post.content_version}`,
+      },
+      { onConflict: "dedupe_key", ignoreDuplicates: true },
+    );
 
     return { ok: true };
   });

@@ -40,6 +40,12 @@ export interface Post {
   /** When the post was marked as posted. */
   posted_at: string | null;
   created_at: string;
+  /** Bumped whenever the client-visible content changes (invalidates approval). */
+  content_version?: number;
+  /** The content version the client approved. */
+  approved_content_version?: number | null;
+  /** Mirror of the publishing job state (ready/scheduled/processing/published/...). */
+  publish_state?: string | null;
 }
 
 export interface Highlight {
