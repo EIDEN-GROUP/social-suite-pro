@@ -109,6 +109,7 @@ export const syncSocialAccounts = createServerFn({ method: "POST" })
       listConnectedAccounts,
       listToolkitToolSlugs,
       listFacebookPages,
+      getLinkedInAuthor,
       PLATFORM_TOOLKIT,
       composioUserId,
     } = await import("@/lib/publishing/composio.server");
@@ -145,6 +146,13 @@ export const syncSocialAccounts = createServerFn({ method: "POST" })
         if (pages.length === 1) {
           destinationId = pages[0].id;
           destinationName = pages[0].name;
+        }
+      }
+      if (platform === "linkedin" && !destinationId && status !== "expired") {
+        const author = await getLinkedInAuthor(data.companyId, acct.connectedAccountId);
+        if (author) {
+          destinationId = author.urn;
+          destinationName = author.name;
         }
       }
 

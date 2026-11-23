@@ -187,6 +187,29 @@ export async function createJob(input: CreateJobInput) {
 }
 
 /**
+ * Walks tool arguments and replaces any `{ __mediaUpload: { url } }` marker
+ * with Composio's uploaded-file descriptor ({name,mimetype,s3key}). Needed for
+ * tools whose media fields are `file_uploadable` (e.g. LinkedIn images).
+ */
+async function resolveMediaUploads(value: unknown): Promise<unknown> {
+  if (Array.isArray(value)) {
+    return Promise.all(value.map((v) => resolveMediaUploads(v)));
+  }
+  if (value && typeof value === "object") {
+    const rec = value as Record<string, unknown>;
+    const marker = rec.__mediaUpload as { url?: string } | undefined;
+    if (marker?.url) {
+      const { uploadMedia } = await import("@/lib/publishing/composio.server");
+      return uploadMedia(marker.url);
+    }
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(rec)) out[k] = await resolveMediaUploads(v);
+    return out;
+  }
+  return value;
+}
+
+/**
  * Executes one job. Idempotent: if a publication is already recorded the job
  * is simply reconciled to `published` (so a retry can never double-post).
  */
@@ -331,6 +354,9 @@ export async function runJob(jobId: string): Promise<{ status: string; error?: s
         }
         args = { ...args, creation_id: creationId };
       }
+
+      // Replace any media-upload markers with Composio file descriptors.
+      args = (await resolveMediaUploads(args)) as Record<string, unknown>;
 
       const result = await executeTool({
         slug: step.slug,

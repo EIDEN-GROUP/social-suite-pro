@@ -256,6 +256,42 @@ export async function listFacebookPages(
   return extractDestinations(result.data);
 }
 
+/** Resolves the LinkedIn member URN that posts should be authored by. */
+export async function getLinkedInAuthor(
+  companyId: string,
+  connectedAccountId: string,
+): Promise<{ urn: string; name: string } | null> {
+  const result = await executeTool({
+    slug: "LINKEDIN_GET_MY_INFO",
+    companyId,
+    connectedAccountId,
+    arguments: {},
+    toolkit: "linkedin",
+  });
+  if (!result.successful || !result.data) return null;
+  const d = result.data as Record<string, unknown>;
+  const id = (d.id ?? d.sub) as string | undefined;
+  if (!id) return null;
+  const urn = id.startsWith("urn:li:") ? id : `urn:li:person:${id}`;
+  const name =
+    `${String(d.localizedFirstName ?? "")} ${String(d.localizedLastName ?? "")}`.trim() ||
+    String(d.vanityName ?? "LinkedIn");
+  return { urn, name };
+}
+
+/** Uploads a media URL to Composio so it can be attached to a tool call. */
+export async function uploadMedia(
+  url: string,
+  opts: { toolSlug?: string; toolkitSlug?: string } = {},
+): Promise<{ name: string; mimetype: string; s3key: string }> {
+  const data = await composio().files.upload({
+    file: url,
+    toolSlug: opts.toolSlug ?? "LINKEDIN_CREATE_LINKED_IN_POST",
+    toolkitSlug: opts.toolkitSlug ?? "linkedin",
+  });
+  return { name: data.name, mimetype: data.mimetype, s3key: data.s3key };
+}
+
 // ---------------------------------------------------------------------------
 // Tool execution
 // ---------------------------------------------------------------------------

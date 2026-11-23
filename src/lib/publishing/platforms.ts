@@ -100,8 +100,13 @@ export function validateContent(platform: Platform, post: Post): void {
   }
 }
 
-/** Platforms whose publish target must be chosen (e.g. a Facebook Page). */
+/** Platforms that need a resolved destination/author stored before publishing. */
 export function destinationRequired(platform: Platform): boolean {
+  return platform === "facebook" || platform === "instagram" || platform === "linkedin";
+}
+
+/** Platforms where the team must pick from multiple destinations (picker UI). */
+export function destinationPickerRequired(platform: Platform): boolean {
   return platform === "facebook" || platform === "instagram";
 }
 
@@ -177,8 +182,25 @@ export function buildPublishPlan(params: {
   if (platform === "linkedin") {
     const slug = firstPresent(capabilities, PUBLISH_CANDIDATES.linkedin);
     if (!slug) throw new PublishCapabilityError("This LinkedIn account cannot publish posts.");
+    if (!account.externalAccountId) {
+      throw new PublishCapabilityError(
+        "No LinkedIn author is set for this account. Refresh the account, then publish.",
+      );
+    }
     const media = primaryMediaUrl(post);
-    return [{ slug, args: { text: caption, ...(media ? { content_url: media } : {}) } }];
+    if (media && post.media_type === "video") {
+      throw new PublishCapabilityError("LinkedIn video posts are not enabled yet.");
+    }
+    const args: Record<string, unknown> = {
+      author: account.externalAccountId,
+      commentary: caption,
+      visibility: "PUBLIC",
+      lifecycleState: "PUBLISHED",
+    };
+    // Images use Composio's file-upload shape; the engine uploads the media URL
+    // and replaces this marker before executing.
+    if (media) args.images = [{ __mediaUpload: { url: media } }];
+    return [{ slug, args }];
   }
 
   if (platform === "instagram") {

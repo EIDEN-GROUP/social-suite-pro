@@ -17,7 +17,7 @@ import {
   PublishCapabilityBadge,
 } from "@/components/social/PlatformBadge";
 import { DestinationPicker } from "@/components/social/DestinationPicker";
-import { destinationRequired } from "@/lib/publishing/platforms";
+import { destinationPickerRequired } from "@/lib/publishing/platforms";
 
 type AccountRow = {
   id: string;
@@ -178,7 +178,7 @@ export function ClientSocialAccounts({ company }: { company: Company }) {
                     <td className="py-2.5">
                       {a ? (
                         <div className="flex flex-wrap items-center gap-2 text-xs">
-                          {destinationRequired(a.platform) && a.status !== "disconnected" && (
+                          {destinationPickerRequired(a.platform) && a.status !== "disconnected" && (
                             <DestinationPicker
                               accountId={a.id}
                               platform={a.platform}

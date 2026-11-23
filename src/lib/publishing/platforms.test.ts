@@ -165,6 +165,44 @@ describe("buildPublishPlan", () => {
     ).toThrow(PublishCapabilityError);
   });
 
+  it("builds a LinkedIn post with author + commentary", () => {
+    const steps = buildPublishPlan({
+      platform: "linkedin",
+      post: post({ platform: "linkedin", media_url: null, caption: "hello li" }),
+      account: { connectedAccountId: "ca_li", externalAccountId: "urn:li:person:abc" },
+      capabilities: ["LINKEDIN_CREATE_LINKED_IN_POST"],
+    });
+    expect(steps[0].slug).toBe("LINKEDIN_CREATE_LINKED_IN_POST");
+    expect(steps[0].args.author).toBe("urn:li:person:abc");
+    expect(steps[0].args.commentary).toBe("hello li");
+    expect(steps[0].args).not.toHaveProperty("images");
+  });
+
+  it("adds a media-upload marker for LinkedIn image posts", () => {
+    const steps = buildPublishPlan({
+      platform: "linkedin",
+      post: post({
+        platform: "linkedin",
+        media_type: "image",
+        media_url: "https://cdn.example.com/x.jpg",
+      }),
+      account: { connectedAccountId: "ca_li", externalAccountId: "urn:li:person:abc" },
+      capabilities: ["LINKEDIN_CREATE_LINKED_IN_POST"],
+    });
+    expect(Array.isArray(steps[0].args.images)).toBe(true);
+  });
+
+  it("refuses LinkedIn without an author", () => {
+    expect(() =>
+      buildPublishPlan({
+        platform: "linkedin",
+        post: post({ platform: "linkedin" }),
+        account: { connectedAccountId: "ca_li", externalAccountId: null },
+        capabilities: ["LINKEDIN_CREATE_LINKED_IN_POST"],
+      }),
+    ).toThrow(PublishCapabilityError);
+  });
+
   it("refuses to plan unsupported platforms", () => {
     expect(() =>
       buildPublishPlan({
