@@ -95,6 +95,14 @@ export function validateContent(platform: Platform, post: Post): void {
   if ((platform === "instagram" || platform === "tiktok") && !primaryMediaUrl(post)) {
     throw new PublishCapabilityError(`${platform} requires an image or video to publish.`);
   }
+  if (platform === "facebook" && !caption && !primaryMediaUrl(post)) {
+    throw new PublishCapabilityError("Facebook requires text or media to publish.");
+  }
+}
+
+/** Platforms whose publish target must be chosen (e.g. a Facebook Page). */
+export function destinationRequired(platform: Platform): boolean {
+  return platform === "facebook" || platform === "instagram";
 }
 
 /**
@@ -118,16 +126,51 @@ export function buildPublishPlan(params: {
   }
 
   if (platform === "facebook") {
+    // Facebook posts target a specific Page - the id is stored on the account.
+    if (!account.externalAccountId) {
+      throw new PublishCapabilityError(
+        "No Facebook Page is selected for this account. Choose a Page, then publish.",
+      );
+    }
+    const media = primaryMediaUrl(post);
+    const isVideo = post.media_type === "video";
+
+    if (isVideo) {
+      const slug = firstPresent(capabilities, ["FACEBOOK_CREATE_VIDEO_POST"]);
+      if (!slug) throw new PublishCapabilityError("This Facebook Page cannot publish video.");
+      return [
+        {
+          slug,
+          args: {
+            page_id: account.externalAccountId,
+            file_url: media,
+            description: caption,
+            published: true,
+          },
+        },
+      ];
+    }
+
+    if (media) {
+      const slug = firstPresent(capabilities, ["FACEBOOK_CREATE_PHOTO_POST"]);
+      if (!slug) throw new PublishCapabilityError("This Facebook Page cannot publish photos.");
+      return [
+        {
+          slug,
+          args: {
+            page_id: account.externalAccountId,
+            url: media,
+            message: caption,
+            published: true,
+          },
+        },
+      ];
+    }
+
     const slug = firstPresent(capabilities, PUBLISH_CANDIDATES.facebook);
     if (!slug) throw new PublishCapabilityError("This Facebook account cannot publish Page posts.");
     return [
-      {
-        slug,
-        args: {
-          message: caption,
-          ...(primaryMediaUrl(post) ? { url: primaryMediaUrl(post) } : {}),
-        },
-      },
+      { slug, args: { page_id: account.externalAccountId, message: caption, published: true } },
     ];
   }
 

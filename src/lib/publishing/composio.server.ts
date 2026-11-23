@@ -205,6 +205,58 @@ export async function listToolkitToolSlugs(toolkit: string): Promise<string[]> {
 }
 
 // ---------------------------------------------------------------------------
+// Publishing destinations (e.g. which Facebook Page to post to)
+// ---------------------------------------------------------------------------
+
+export type Destination = { id: string; name: string };
+
+/** Recursively collect {id,name} pairs from a provider response of unknown shape. */
+function extractDestinations(value: unknown): Destination[] {
+  const out: Destination[] = [];
+  const seen = new Set<string>();
+  const visit = (v: unknown) => {
+    if (!v) return;
+    if (Array.isArray(v)) {
+      for (const item of v) {
+        if (item && typeof item === "object") {
+          const rec = item as Record<string, unknown>;
+          const id = rec.id;
+          if (typeof id === "string" && id) {
+            if (!seen.has(id)) {
+              seen.add(id);
+              out.push({ id, name: String(rec.name ?? rec.username ?? id) });
+            }
+          }
+        }
+      }
+      return;
+    }
+    if (typeof v === "object") {
+      const rec = v as Record<string, unknown>;
+      for (const key of ["data", "items", "pages", "accounts"]) visit(rec[key]);
+    }
+  };
+  visit(value);
+  return out;
+}
+
+/** Lists the Facebook Pages the connected account manages. */
+export async function listFacebookPages(
+  companyId: string,
+  connectedAccountId: string,
+): Promise<Destination[]> {
+  const result = await executeTool({
+    slug: "FACEBOOK_LIST_MANAGED_PAGES",
+    companyId,
+    connectedAccountId,
+    arguments: {},
+    toolkit: "facebook",
+  });
+  if (!result.successful) return [];
+  return extractDestinations(result.data);
+}
+
+// ---------------------------------------------------------------------------
 // Tool execution
 // ---------------------------------------------------------------------------
 

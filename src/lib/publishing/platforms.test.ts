@@ -122,6 +122,49 @@ describe("buildPublishPlan", () => {
     ).toThrow(PublishCapabilityError);
   });
 
+  it("builds a Facebook text post with page_id", () => {
+    const steps = buildPublishPlan({
+      platform: "facebook",
+      post: post({ platform: "facebook", media_url: null, caption: "hello fb" }),
+      account: { connectedAccountId: "ca_fb", externalAccountId: "123456789012345" },
+      capabilities: ["FACEBOOK_CREATE_POST"],
+    });
+    expect(steps).toHaveLength(1);
+    expect(steps[0].slug).toBe("FACEBOOK_CREATE_POST");
+    expect(steps[0].args).toEqual({
+      page_id: "123456789012345",
+      message: "hello fb",
+      published: true,
+    });
+  });
+
+  it("builds a Facebook photo post with page_id", () => {
+    const steps = buildPublishPlan({
+      platform: "facebook",
+      post: post({
+        platform: "facebook",
+        media_type: "image",
+        media_url: "https://cdn.example.com/a.jpg",
+      }),
+      account: { connectedAccountId: "ca_fb", externalAccountId: "123" },
+      capabilities: ["FACEBOOK_CREATE_POST", "FACEBOOK_CREATE_PHOTO_POST"],
+    });
+    expect(steps[0].slug).toBe("FACEBOOK_CREATE_PHOTO_POST");
+    expect(steps[0].args.page_id).toBe("123");
+    expect(steps[0].args.url).toBe("https://cdn.example.com/a.jpg");
+  });
+
+  it("refuses to plan a Facebook post without a Page", () => {
+    expect(() =>
+      buildPublishPlan({
+        platform: "facebook",
+        post: post({ platform: "facebook" }),
+        account: { connectedAccountId: "ca_fb", externalAccountId: null },
+        capabilities: ["FACEBOOK_CREATE_POST"],
+      }),
+    ).toThrow(PublishCapabilityError);
+  });
+
   it("refuses to plan unsupported platforms", () => {
     expect(() =>
       buildPublishPlan({

@@ -18,6 +18,8 @@ import {
   PlatformBadge,
   PublishCapabilityBadge,
 } from "@/components/social/PlatformBadge";
+import { DestinationPicker } from "@/components/social/DestinationPicker";
+import { destinationRequired } from "@/lib/publishing/platforms";
 import { postedAgo } from "@/lib/posted";
 
 export const Route = createFileRoute("/_authenticated/admin/social-accounts")({
@@ -33,6 +35,7 @@ type AccountRow = {
   avatar_url: string | null;
   status: string;
   can_publish: boolean;
+  external_account_id: string | null;
   last_synced_at: string | null;
   last_checked_at: string | null;
   last_error: string | null;
@@ -279,6 +282,14 @@ function SocialAccountsPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <AccountStatusBadge status={a.status} />
                   <PublishCapabilityBadge canPublish={a.can_publish} />
+                  {destinationRequired(a.platform) && a.status !== "disconnected" && (
+                    <DestinationPicker
+                      accountId={a.id}
+                      platform={a.platform}
+                      currentName={a.external_account_id ? a.display_name : null}
+                      onChanged={reload}
+                    />
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <button

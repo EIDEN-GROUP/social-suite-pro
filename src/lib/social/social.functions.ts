@@ -105,9 +105,14 @@ export const syncSocialAccounts = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await (await import("@/lib/server-auth.server")).requireSuperadmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { listConnectedAccounts, listToolkitToolSlugs, PLATFORM_TOOLKIT, composioUserId } =
-      await import("@/lib/publishing/composio.server");
-    const { canPublishFor } = await import("@/lib/publishing/platforms");
+    const {
+      listConnectedAccounts,
+      listToolkitToolSlugs,
+      listFacebookPages,
+      PLATFORM_TOOLKIT,
+      composioUserId,
+    } = await import("@/lib/publishing/composio.server");
+    const { canPublishFor, destinationRequired } = await import("@/lib/publishing/platforms");
 
     const toolkit = data.platform ? PLATFORM_TOOLKIT[data.platform as Platform] : undefined;
     const remote = await listConnectedAccounts(data.companyId, toolkit);
@@ -129,20 +134,38 @@ export const syncSocialAccounts = createServerFn({ method: "POST" })
       if (!platform) continue;
       const capabilities = await capsFor(acct.toolkit);
       const status = mapStatus(acct.status);
+
+      // A Facebook (and Instagram) connection needs a concrete destination id
+      // before it can publish. Auto-select when the account manages exactly one
+      // Page; otherwise leave it for the user to choose.
+      let destinationId = acct.externalAccountId;
+      let destinationName: string | null = null;
+      if (platform === "facebook" && !destinationId && status !== "expired") {
+        const pages = await listFacebookPages(data.companyId, acct.connectedAccountId);
+        if (pages.length === 1) {
+          destinationId = pages[0].id;
+          destinationName = pages[0].name;
+        }
+      }
+
+      const canPublish =
+        canPublishFor(platform, capabilities) &&
+        (!destinationRequired(platform) || Boolean(destinationId));
+
       const { error } = await supabaseAdmin.from("social_accounts").upsert(
         {
           company_id: data.companyId,
           platform,
           composio_user_id: composioUserId(data.companyId),
           connected_account_id: acct.connectedAccountId,
-          external_account_id: acct.externalAccountId,
-          display_name: acct.displayName,
+          external_account_id: destinationId,
+          display_name: destinationName ?? acct.displayName,
           username: acct.username,
           avatar_url: acct.avatarUrl,
           account_type: acct.accountType,
           status,
           capabilities,
-          can_publish: canPublishFor(platform, capabilities),
+          can_publish: canPublish,
           last_checked_at: new Date().toISOString(),
           last_synced_at: new Date().toISOString(),
           last_error: status === "error" ? "Provider reported an error." : null,
@@ -169,7 +192,7 @@ export const refreshSocialAccount = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { getConnectedAccount, listToolkitToolSlugs, PLATFORM_TOOLKIT } =
       await import("@/lib/publishing/composio.server");
-    const { canPublishFor } = await import("@/lib/publishing/platforms");
+    const { canPublishFor, destinationRequired } = await import("@/lib/publishing/platforms");
 
     const { data: account } = await supabaseAdmin
       .from("social_accounts")
@@ -188,7 +211,10 @@ export const refreshSocialAccount = createServerFn({ method: "POST" })
       .update({
         status,
         capabilities,
-        can_publish: canPublishFor(account.platform as Platform, capabilities),
+        can_publish:
+          canPublishFor(account.platform as Platform, capabilities) &&
+          (!destinationRequired(account.platform as Platform) ||
+            Boolean(account.external_account_id)),
         display_name: remote?.displayName ?? account.display_name,
         username: remote?.username ?? account.username,
         avatar_url: remote?.avatarUrl ?? account.avatar_url,
@@ -238,6 +264,79 @@ export const disconnectSocialAccount = createServerFn({ method: "POST" })
       social_account_id: account.id,
       type: "disconnected",
       message: "Disconnected by studio",
+    });
+
+    return { ok: true };
+  });
+
+/**
+ * Lists the destinations a connected account can publish to (e.g. the Facebook
+ * Pages it manages). Used to pick the correct target before publishing.
+ */
+export const listSocialDestinations = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({ accountId: z.string().uuid() }).parse(input))
+  .handler(async ({ data }) => {
+    await (await import("@/lib/server-auth.server")).requireSuperadmin();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { listFacebookPages } = await import("@/lib/publishing/composio.server");
+
+    const { data: account } = await supabaseAdmin
+      .from("social_accounts")
+      .select("*")
+      .eq("id", data.accountId)
+      .maybeSingle();
+    if (!account) throw new Error("Account not found.");
+
+    if (account.platform === "facebook") {
+      const pages = await listFacebookPages(account.company_id, account.connected_account_id);
+      return { destinations: pages, selected: account.external_account_id };
+    }
+    return { destinations: [], selected: account.external_account_id };
+  });
+
+/** Saves the chosen publishing destination for an account. */
+export const setSocialDestination = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        accountId: z.string().uuid(),
+        destinationId: z.string().min(1).max(120),
+        destinationName: z.string().max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await (await import("@/lib/server-auth.server")).requireSuperadmin();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { canPublishFor, destinationRequired } = await import("@/lib/publishing/platforms");
+
+    const { data: account } = await supabaseAdmin
+      .from("social_accounts")
+      .select("*")
+      .eq("id", data.accountId)
+      .maybeSingle();
+    if (!account) throw new Error("Account not found.");
+
+    const capabilities = (account.capabilities as string[]) ?? [];
+    const canPublish =
+      canPublishFor(account.platform as Platform, capabilities) &&
+      (!destinationRequired(account.platform as Platform) || Boolean(data.destinationId));
+
+    await supabaseAdmin
+      .from("social_accounts")
+      .update({
+        external_account_id: data.destinationId,
+        display_name: data.destinationName ?? account.display_name,
+        can_publish: canPublish,
+        last_error: null,
+      })
+      .eq("id", data.accountId);
+
+    await supabaseAdmin.from("integration_events").insert({
+      company_id: account.company_id,
+      social_account_id: account.id,
+      type: "synced",
+      message: `Selected destination ${data.destinationName ?? data.destinationId}`,
     });
 
     return { ok: true };
