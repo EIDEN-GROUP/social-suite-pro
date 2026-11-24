@@ -14,7 +14,12 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type { Platform } from "@/lib/types";
-import { listAuthSetups, saveCustomAuth, useManagedAuth } from "@/lib/social/social.functions";
+import {
+  listAuthSetups,
+  saveCustomAuth,
+  useManagedAuth,
+  authCredentialFields,
+} from "@/lib/social/social.functions";
 import { PlatformBadge } from "@/components/social/PlatformBadge";
 
 export const Route = createFileRoute("/_authenticated/admin/auth-configs")({
@@ -48,6 +53,7 @@ type FormState = {
   clientSecret: string;
   scopes: string;
   redirectUri: string;
+  extra: string;
 };
 
 const EMPTY_FORM: FormState = {
@@ -56,18 +62,21 @@ const EMPTY_FORM: FormState = {
   clientSecret: "",
   scopes: "",
   redirectUri: "",
+  extra: "",
 };
 
 function AuthConfigsPage() {
   const load = useServerFn(listAuthSetups);
   const save = useServerFn(saveCustomAuth);
   const reset = useServerFn(useManagedAuth);
+  const loadFields = useServerFn(authCredentialFields);
 
   const [setups, setSetups] = useState<Setup[]>([]);
   const [loading, setLoading] = useState(true);
   const [openPlatform, setOpenPlatform] = useState<Platform | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [busy, setBusy] = useState<Platform | null>(null);
+  const [requiredFields, setRequiredFields] = useState<string[]>([]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -87,12 +96,16 @@ function AuthConfigsPage() {
 
   function openForm(s: Setup) {
     setOpenPlatform(s.platform);
+    setRequiredFields([]);
     setForm({
       ...EMPTY_FORM,
       redirectUri: s.redirectUri || s.callback,
       scopes: s.scopes ?? "",
       appName: s.appName || "SMimulator",
     });
+    loadFields({ data: { platform: s.platform } })
+      .then((res) => setRequiredFields(res.fields ?? []))
+      .catch(() => setRequiredFields([]));
   }
 
   async function copy(value: string) {
@@ -119,6 +132,7 @@ function AuthConfigsPage() {
           clientSecret: form.clientSecret.trim(),
           scopes: form.scopes.trim() || undefined,
           redirectUri: form.redirectUri.trim() || s.callback,
+          extra: form.extra.trim() || undefined,
         },
       });
       toast.success("Your OAuth app is now used for this platform.", { id: tid });
@@ -205,10 +219,11 @@ function AuthConfigsPage() {
           <p className="mt-4 flex items-start gap-2 rounded border border-amber-300/60 bg-amber-50 p-3 text-[12px] leading-relaxed text-amber-900">
             <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
-              No setup removes the final hops from the browser: the provider's sign-in/consent pages
-              and Composio's OAuth callback still appear. What changes is the app identity on the
-              consent screen, and (with your own app) Composio's hosted connect page is skipped so
-              our own connecting screen is used instead.
+              The "Secured by Composio" page is Composio's hosted connect page. With your own OAuth
+              app we start authorization directly, so that page and its badge never appear — for
+              Instagram, Facebook, LinkedIn and TikTok (X additionally needs its Application Bearer
+              Token in the extra-credentials field). The provider's own sign-in/consent screens
+              still appear, and Composio's callback still shows in the address bar.
             </span>
           </p>
         </section>
@@ -380,6 +395,30 @@ function AuthConfigsPage() {
                               className="mt-1 w-full rounded-sm border editorial-rule bg-background px-3 py-2 font-mono text-[12px]"
                             />
                           </label>
+                          <div className="sm:col-span-2">
+                            {requiredFields.length > 0 && (
+                              <p className="mb-2 text-[11px] text-muted-foreground">
+                                Toolkit requires: {requiredFields.join(", ")}
+                                {requiredFields.some(
+                                  (f) => !["client_id", "client_secret"].includes(f),
+                                )
+                                  ? " — add the extra fields as JSON below, or this platform will fall back to Composio's hosted page."
+                                  : ""}
+                              </p>
+                            )}
+                            <label className="block">
+                              <span className="text-[11px] uppercase tracking-widest text-muted-foreground">
+                                Extra credentials (JSON, only if required above)
+                              </span>
+                              <textarea
+                                value={form.extra}
+                                onChange={(e) => setForm({ ...form, extra: e.target.value })}
+                                rows={2}
+                                placeholder='{"generic_id":"your X Application Bearer Token"}'
+                                className="mt-1 w-full resize-none rounded-sm border editorial-rule bg-background px-3 py-2 font-mono text-[11px]"
+                              />
+                            </label>
+                          </div>
                         </div>
                         <div className="flex items-center justify-between gap-3">
                           <p className="text-[11px] text-muted-foreground">

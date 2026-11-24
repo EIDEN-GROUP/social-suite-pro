@@ -119,6 +119,39 @@ Go to **Admin → Connect**, pick the client and platform. Authorize on the
 provider. You should see your app name on the consent screen, then return to our
 connecting screen and see the account sync.
 
+## Removing the “Secured by Composio” badge
+
+That badge lives on **Composio's hosted connect page** only. There is:
+
+- **No theme setting to hide it.** The White Labeling editor changes the logo,
+  app title and per-element styling, but the Composio attribution isn't one of
+  the editable elements.
+- **No public API for it.** Every probe of `/project/settings`, `/white_label`,
+  `/auth_screen`, `/branding`, … on `backend.composio.dev/api/v3.1` returns 404,
+  so it's dashboard-only (and the badge has no documented toggle).
+
+Two ways forward:
+
+1. **Skip the hosted page (recommended, already implemented).** With your own
+   OAuth app, `startConnection()` calls `connectedAccounts.initiate(...)` with
+   `long_redirect_url: true`, so the browser goes **straight to the provider** —
+   Composio's page (and the badge) never render. Verified per toolkit:
+
+   | Toolkit | Direct provider redirect | Notes |
+   | --- | --- | --- |
+   | Instagram | ✅ `www.instagram.com/oauth/authorize` | |
+   | Facebook | ✅ `www.facebook.com/v26.0/dialog/oauth` | |
+   | LinkedIn | ✅ `www.linkedin.com/oauth/v2/authorization` | |
+   | TikTok | ✅ `www.tiktok.com/v2/auth/authorize/` | |
+   | X | ⚠️ needs extra field | Toolkit also requires `generic_id` (Application Bearer Token) — paste it in the form's extra-credentials JSON: `{"generic_id":"…"}` |
+
+   If a toolkit can't go direct, the code falls back to the hosted Connect Link
+   automatically (badge and all).
+
+2. **Ask Composio to remove it on the hosted page.** If you prefer to keep the
+   hosted flow, that's a support/plan request — nothing in the dashboard or API
+   exposes it today.
+
 ## Composio hosted page (fallback) theme
 
 If you're still on managed auth, you can at least brand the hosted Connect Link:

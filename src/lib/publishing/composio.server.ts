@@ -196,14 +196,16 @@ export async function createCustomOAuthConfig(params: {
   clientSecret: string;
   scopes?: string;
   redirectUri?: string;
+  /** Extra credential fields some toolkits require (e.g. X's bearer token). */
+  extra?: Record<string, string>;
 }): Promise<{ authConfigId: string }> {
   const toolkit = PLATFORM_TOOLKIT[params.platform];
   const redirectUri = params.redirectUri?.trim() || COMPOSIO_OAUTH_CALLBACK;
-  const credentials: Record<string, string> = {
-    client_id: params.clientId,
-    client_secret: params.clientSecret,
-    oauth_redirect_uri: redirectUri,
-  };
+  const credentials: Record<string, string> = { ...(params.extra ?? {}) };
+  // Authoritative values last so extras can never shadow them.
+  credentials.client_id = params.clientId;
+  credentials.client_secret = params.clientSecret;
+  credentials.oauth_redirect_uri = redirectUri;
   const scopes = params.scopes?.trim();
   if (scopes) credentials.scopes = scopes;
 

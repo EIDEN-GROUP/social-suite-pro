@@ -126,6 +126,8 @@ export const saveCustomAuth = createServerFn({ method: "POST" })
         clientSecret: z.string().trim().min(8).max(500),
         scopes: z.string().trim().max(2000).optional(),
         redirectUri: z.string().url().max(500).optional(),
+        /** JSON object of extra credential fields (e.g. X's bearer token). */
+        extra: z.string().max(2000).optional(),
       })
       .parse(input),
   )
@@ -133,6 +135,24 @@ export const saveCustomAuth = createServerFn({ method: "POST" })
     await (await import("@/lib/server-auth.server")).requireSuperadmin();
     const { createCustomOAuthConfig, getAuthConfigInfo } =
       await import("@/lib/publishing/composio.server");
+
+    let extra: Record<string, string> = {};
+    if (data.extra?.trim()) {
+      try {
+        const parsed = JSON.parse(data.extra) as unknown;
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+          throw new Error("not an object");
+        }
+        extra = Object.fromEntries(
+          Object.entries(parsed as Record<string, unknown>).map(([k, v]) => [k, String(v)]),
+        );
+      } catch {
+        throw new Error(
+          'Extra credentials must be a JSON object, e.g. {"generic_id":"your bearer token"}.',
+        );
+      }
+    }
+
     try {
       const { authConfigId } = await createCustomOAuthConfig({
         platform: data.platform as Platform,
@@ -141,6 +161,7 @@ export const saveCustomAuth = createServerFn({ method: "POST" })
         clientSecret: data.clientSecret,
         scopes: data.scopes,
         redirectUri: data.redirectUri,
+        extra,
       });
       await (
         await import("@/integrations/supabase/client.server")
