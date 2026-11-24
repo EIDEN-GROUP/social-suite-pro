@@ -5,6 +5,7 @@ import { CalendarClock, Check, Rocket, X } from "lucide-react";
 import type { Company, Post, Platform } from "@/lib/types";
 import { Media } from "@/components/Media";
 import { AccountStatusBadge, PlatformBadge } from "@/components/social/PlatformBadge";
+import { publishingToast } from "@/components/publish-toast";
 import {
   getPublishableContext,
   publishNow,
@@ -68,13 +69,14 @@ export function ApprovalPublishDialog({ post, company, onClose, onDismiss }: Pro
     if (!selected) return toast.error("Select an account first.");
     if (!selected.can_publish) return toast.error("This account cannot publish this content.");
     setBusy(true);
+    const tid = publishingToast("Publishing…");
     try {
       const res = await doPublishNow({ data: { postId: post.id, socialAccountId: selected.id } });
-      if (res.status === "published") toast.success("Published ✅");
-      else toast.warning(res.error ?? `Publishing status: ${res.status}`);
+      if (res.status === "published") toast.success("Published ✅", { id: tid });
+      else toast.warning(res.error ?? `Publishing status: ${res.status}`, { id: tid });
       onClose();
     } catch (err) {
-      toast.error((err as Error).message);
+      toast.error((err as Error).message, { id: tid });
     } finally {
       setBusy(false);
     }
@@ -84,16 +86,18 @@ export function ApprovalPublishDialog({ post, company, onClose, onDismiss }: Pro
     if (!selected) return toast.error("Select an account first.");
     if (!scheduledFor) return toast.error("Pick a date and time.");
     setBusy(true);
+    const tid = publishingToast("Scheduling…");
     try {
       const iso = new Date(scheduledFor).toISOString();
       const res = await doSchedule({
         data: { postId: post.id, socialAccountId: selected.id, scheduledFor: iso },
       });
-      if ("scheduled" in res && res.scheduled) toast.success("Scheduled for publishing");
-      else toast.success("Published ✅");
+      if ("scheduled" in res && res.scheduled)
+        toast.success("Scheduled for publishing", { id: tid });
+      else toast.success("Published ✅", { id: tid });
       onClose();
     } catch (err) {
-      toast.error((err as Error).message);
+      toast.error((err as Error).message, { id: tid });
     } finally {
       setBusy(false);
     }

@@ -8,6 +8,7 @@ import type { Company, Platform } from "@/lib/types";
 import { PLATFORMS } from "@/lib/types";
 import { Media } from "@/components/Media";
 import { PlatformBadge } from "@/components/social/PlatformBadge";
+import { publishingToast } from "@/components/publish-toast";
 import {
   cancelPublishingJob,
   listPublishingJobs,
@@ -159,12 +160,13 @@ function PublishingCenter() {
   async function onCancel(id: string) {
     if (!confirm("Cancel this scheduled post?")) return;
     setBusyId(id);
+    const tid = publishingToast("Cancelling…");
     try {
       await cancel({ data: { id } });
-      toast.success("Cancelled");
+      toast.success("Cancelled", { id: tid });
       await reload();
     } catch (err) {
-      toast.error((err as Error).message);
+      toast.error((err as Error).message, { id: tid });
     } finally {
       setBusyId(null);
     }
@@ -172,13 +174,14 @@ function PublishingCenter() {
 
   async function onRetry(id: string) {
     setBusyId(id);
+    const tid = publishingToast("Publishing…");
     try {
       const res = await retry({ data: { id } });
-      if (res.status === "published") toast.success("Published ✅");
-      else toast.warning(res.error ?? `Status: ${res.status}`);
+      if (res.status === "published") toast.success("Published ✅", { id: tid });
+      else toast.warning(res.error ?? `Status: ${res.status}`, { id: tid });
       await reload();
     } catch (err) {
-      toast.error((err as Error).message);
+      toast.error((err as Error).message, { id: tid });
     } finally {
       setBusyId(null);
     }
