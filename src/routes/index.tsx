@@ -35,7 +35,7 @@ import {
 // ---- Studio contact details ------------------------------------------------
 const WHATSAPP_NUMBER = "212777777428"; // Morocco line - WhatsApp
 const WHATSAPP_PREFILL =
-  "Hi SMimulator 👋 I'd like to see how the approval studio works for my agency.";
+  "Hi Simulator 👋 I'd like to see how the approval studio works for my agency.";
 const waLink = (text: string) =>
   `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 const CONTACT = {
@@ -49,13 +49,13 @@ const CONTACT = {
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "SMimulator - Where social campaigns get the green light" },
+      { title: "Simulator - Where social campaigns get the green light" },
       {
         name: "description",
         content:
           "An editorial proofing room where agencies present Instagram, TikTok, Facebook, X & LinkedIn campaigns in true-to-life mockups - and clients approve them in one tap.",
       },
-      { property: "og:title", content: "SMimulator - Social Media Approval Studio" },
+      { property: "og:title", content: "Simulator - Social Media Approval Studio" },
       {
         property: "og:description",
         content:
@@ -77,16 +77,16 @@ const PLATFORM_CHIPS = [
 // ---- Demo content so visitors can play with every platform on the homepage ----
 const demoCompany: Company = {
   id: "demo",
-  slug: "smimulator",
-  name: "SMimulator Studio",
+  slug: "simulator",
+  name: "Simulator Studio",
   accent_color: "#dc2743",
   logo_url: null,
   bio: "Where social campaigns get the green light ✨",
-  username: "smimulator.studio",
+  username: "simulator.studio",
   profile_pic_url: "https://picsum.photos/seed/atelieravatar/200/200",
   followers: "64.4k",
   following: 128,
-  link: "https://smimulator.studio",
+  link: "https://simulator.eiden-group.com",
   category: "Creative Studio",
   cover_url: "https://picsum.photos/seed/ateliercover/1200/400",
 };
@@ -176,12 +176,8 @@ function Index() {
       <header className="glass sticky top-0 z-50 border-b editorial-rule">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2 font-display text-2xl tracking-tight">
-            <img
-              src={logoUrl}
-              alt="SMimulator"
-              className="h-8 w-8 rounded-lg object-cover"
-            />
-            SMimulator
+            <img src={logoUrl} alt="Simulator" className="h-8 w-8 rounded-lg object-cover" />
+            Simulator
           </div>
           <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
             <a href="#how" className="hover:text-foreground">
@@ -464,14 +460,9 @@ function Index() {
       <footer className="border-t editorial-rule">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-6 py-8 text-xs text-muted-foreground sm:flex-row">
           <div className="flex items-center gap-2">
-            <img
-              src={logoUrl}
-              alt="SMimulator"
-              className="h-7 w-7 rounded-lg object-cover"
-            />
+            <img src={logoUrl} alt="Simulator" className="h-7 w-7 rounded-lg object-cover" />
             <span>
-              © {new Date().getFullYear()} SMimulator Studio - Approval workflow for modern
-              agencies.
+              © {new Date().getFullYear()} Simulator Studio - Approval workflow for modern agencies.
             </span>
           </div>
         </div>
@@ -528,7 +519,7 @@ function ContactSection() {
       // 1) Save the lead so nothing is ever lost…
       await send({ data: form });
       // 2) …then hand off to WhatsApp with the message pre-written.
-      const text = `Hi SMimulator, I'm ${form.name.trim()}.${form.email.trim() ? ` (${form.email.trim()})` : ""}\n\n${form.message.trim()}`;
+      const text = `Hi Simulator, I'm ${form.name.trim()}.${form.email.trim() ? ` (${form.email.trim()})` : ""}\n\n${form.message.trim()}`;
       window.open(waLink(text), "_blank", "noopener,noreferrer");
       toast.success("Thanks! Opening WhatsApp to finish the conversation ✨");
       setForm({ name: "", email: "", phone: "", message: "" });

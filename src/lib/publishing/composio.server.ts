@@ -72,7 +72,7 @@ export async function getAuthConfigId(
 
   const created = (await composio().authConfigs.create(toolkit, {
     type: "use_composio_managed_auth",
-    name: `SMimulator ${platform}`,
+    name: `Simulator ${platform}`,
   } as never)) as { id?: string };
   const id = created?.id;
   if (!id) throw new Error("Composio did not return an auth config id.");

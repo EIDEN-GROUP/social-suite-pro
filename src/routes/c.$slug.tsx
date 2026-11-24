@@ -55,7 +55,7 @@ import { formatPostedAt, linkHost, postedAgo } from "@/lib/posted";
 
 export const Route = createFileRoute("/c/$slug")({
   ssr: false,
-  head: () => ({ meta: [{ title: "For your approval - SMimulator" }] }),
+  head: () => ({ meta: [{ title: "For your approval - Simulator" }] }),
   component: ClientRoom,
 });
 

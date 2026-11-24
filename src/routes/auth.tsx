@@ -11,8 +11,8 @@ import logoUrl from "@/assets/logo.jpg";
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
-      { title: "Sign in - SMimulator" },
-      { name: "description", content: "Sign in to the SMimulator approval studio." },
+      { title: "Sign in - Simulator" },
+      { name: "description", content: "Sign in to the Simulator approval studio." },
     ],
   }),
   component: AuthPage,
@@ -101,8 +101,8 @@ function AuthPage() {
           <AuroraLayer />
 
           <Link to="/" className="relative z-10 flex items-center gap-3">
-            <img src={logoUrl} alt="SMimulator" className="h-10 w-10 rounded-xl object-cover" />
-            <span className="font-display text-xl tracking-tight">SMimulator</span>
+            <img src={logoUrl} alt="Simulator" className="h-10 w-10 rounded-xl object-cover" />
+            <span className="font-display text-xl tracking-tight">Simulator</span>
           </Link>
 
           <div className="relative z-10">
@@ -134,7 +134,7 @@ function AuthPage() {
           </div>
 
           <p className="relative z-10 text-[11px] uppercase tracking-[0.3em] text-white/40">
-            © SMimulator Studio
+            © Simulator Studio
           </p>
         </div>
       </aside>
@@ -152,8 +152,8 @@ function AuthPage() {
             to="/"
             className="mb-8 inline-flex items-center gap-2 font-display text-2xl tracking-tight lg:hidden"
           >
-            <img src={logoUrl} alt="SMimulator" className="h-8 w-8 rounded-xl object-cover" />
-            SMimulator
+            <img src={logoUrl} alt="Simulator" className="h-8 w-8 rounded-xl object-cover" />
+            Simulator
           </Link>
 
           <span className="inline-flex items-center gap-1.5 rounded-full border border-foreground/10 bg-background/40 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">

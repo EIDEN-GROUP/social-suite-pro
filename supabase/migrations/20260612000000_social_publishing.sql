@@ -1,5 +1,5 @@
 -- ================================================================
--- SMimulator - Composio social accounts + publishing
+-- Simulator - Composio social accounts + publishing
 --
 -- ADDITIVE ONLY. Nothing existing is dropped or rewritten. This adds:
 --   * social connection tables (accounts, integration configs, events)

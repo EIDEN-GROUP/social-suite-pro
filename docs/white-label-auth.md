@@ -1,7 +1,7 @@
 # White-label OAuth (use your own OAuth apps)
 
 This lets the provider's consent screen say **your** app name and logo (e.g.
-“SMimulator wants to access your Instagram”) and lets our app skip Composio's
+“Simulator wants to access your Instagram”) and lets our app skip Composio's
 hosted connect page.
 
 > **What can't be removed:** the provider's own sign-in/consent pages and
@@ -11,11 +11,11 @@ hosted connect page.
 
 ## The three layers
 
-| Layer | Who controls it | How to change it |
-| --- | --- | --- |
-| Provider consent screen (name, logo, publisher) | The OAuth app registered with Meta / LinkedIn / X / TikTok | Register your own OAuth app (this doc) |
-| Composio hosted Connect Link page | Composio project settings | Dashboard → Project Settings → White Labeling (fallback only; our app skips it when a custom app is configured) |
-| Our connecting screen | This codebase | `/admin/connect` + the “Connecting” modal, styled with the project design system |
+| Layer                                           | Who controls it                                            | How to change it                                                                                                |
+| ----------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Provider consent screen (name, logo, publisher) | The OAuth app registered with Meta / LinkedIn / X / TikTok | Register your own OAuth app (this doc)                                                                          |
+| Composio hosted Connect Link page               | Composio project settings                                  | Dashboard → Project Settings → White Labeling (fallback only; our app skips it when a custom app is configured) |
+| Our connecting screen                           | This codebase                                              | `/admin/connect` + the “Connecting” modal, styled with the project design system                                |
 
 ## How our app behaves
 
@@ -55,6 +55,7 @@ as the provider entry and the auth config's redirect URI match**. Keep the card
 value unless the provider rejects it.
 
 #### Meta — Instagram + Facebook
+
 - <https://developers.facebook.com/apps/> → **Create app** → type **Business**.
 - Add products: **Facebook Login for Business** and **Instagram Graph API**.
 - Facebook Login → Settings → **Valid OAuth Redirect URIs** → the callback above.
@@ -69,6 +70,7 @@ value unless the provider rejects it.
   switched **Live**.
 
 #### LinkedIn
+
 - <https://www.linkedin.com/developers/apps> → **Create app** (name, company
   Page, logo). The app must be associated with a LinkedIn Page.
 - **Products**: add **Share on LinkedIn** and **Sign In with LinkedIn using
@@ -83,6 +85,7 @@ value unless the provider rejects it.
   with org scopes only.
 
 #### X (Twitter)
+
 - <https://developer.x.com/en/portal/dashboard> → project → app → **User
   authentication settings** → **Set up**.
 - App permissions: **Read and write**. App type: **Web App**.
@@ -91,6 +94,7 @@ value unless the provider rejects it.
 - Scopes: `tweet.read users.read tweet.write offline.access`.
 
 #### TikTok
+
 - <https://developers.tiktok.com/apps/> → **Connect an app**.
 - Add **Login Kit** and **Content Posting API**; set the redirect URI above.
 - Copy the **Client key** / **Client secret**.
@@ -137,13 +141,13 @@ Two ways forward:
    `long_redirect_url: true`, so the browser goes **straight to the provider** —
    Composio's page (and the badge) never render. Verified per toolkit:
 
-   | Toolkit | Direct provider redirect | Notes |
-   | --- | --- | --- |
-   | Instagram | ✅ `www.instagram.com/oauth/authorize` | |
-   | Facebook | ✅ `www.facebook.com/v26.0/dialog/oauth` | |
-   | LinkedIn | ✅ `www.linkedin.com/oauth/v2/authorization` | |
-   | TikTok | ✅ `www.tiktok.com/v2/auth/authorize/` | |
-   | X | ⚠️ needs extra field | Toolkit also requires `generic_id` (Application Bearer Token) — paste it in the form's extra-credentials JSON: `{"generic_id":"…"}` |
+   | Toolkit   | Direct provider redirect                     | Notes                                                                                                                               |
+   | --------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+   | Instagram | ✅ `www.instagram.com/oauth/authorize`       |                                                                                                                                     |
+   | Facebook  | ✅ `www.facebook.com/v26.0/dialog/oauth`     |                                                                                                                                     |
+   | LinkedIn  | ✅ `www.linkedin.com/oauth/v2/authorization` |                                                                                                                                     |
+   | TikTok    | ✅ `www.tiktok.com/v2/auth/authorize/`       |                                                                                                                                     |
+   | X         | ⚠️ needs extra field                         | Toolkit also requires `generic_id` (Application Bearer Token) — paste it in the form's extra-credentials JSON: `{"generic_id":"…"}` |
 
    If a toolkit can't go direct, the code falls back to the hosted Connect Link
    automatically (badge and all).
@@ -156,7 +160,7 @@ Two ways forward:
 
 If you're still on managed auth, you can at least brand the hosted Connect Link:
 
-- **Project Settings → White Labeling → Branding**: App Title `SMimulator`;
+- **Project Settings → White Labeling → Branding**: App Title `Simulator`;
   upload a square logo (256–1024 px).
 - **Styling** seeds to match this project:
   - Page background `#F7F7F8`, card `#FFFFFF`

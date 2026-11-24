@@ -57,7 +57,7 @@ type FormState = {
 };
 
 const EMPTY_FORM: FormState = {
-  appName: "SMimulator",
+  appName: "Simulator",
   clientId: "",
   clientSecret: "",
   scopes: "",
@@ -101,7 +101,7 @@ function AuthConfigsPage() {
       ...EMPTY_FORM,
       redirectUri: s.redirectUri || s.callback,
       scopes: s.scopes ?? "",
-      appName: s.appName || "SMimulator",
+      appName: s.appName || "Simulator",
     });
     loadFields({ data: { platform: s.platform } })
       .then((res) => setRequiredFields(res.fields ?? []))
@@ -127,7 +127,7 @@ function AuthConfigsPage() {
       await save({
         data: {
           platform: s.platform,
-          appName: form.appName.trim() || "SMimulator",
+          appName: form.appName.trim() || "Simulator",
           clientId: form.clientId.trim(),
           clientSecret: form.clientSecret.trim(),
           scopes: form.scopes.trim() || undefined,
@@ -186,9 +186,9 @@ function AuthConfigsPage() {
         <section className="rounded border editorial-rule p-5">
           <h1 className="font-display text-2xl">Use your own OAuth apps</h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground/70">
-            This controls whose name appears on the provider's consent screen (e.g. "SMimulator
-            wants to access your Instagram"). Register an OAuth app with each provider, add the
-            redirect URI below, then paste its client ID and secret here.
+            This controls whose name appears on the provider's consent screen (e.g. "Simulator wants
+            to access your Instagram"). Register an OAuth app with each provider, add the redirect
+            URI below, then paste its client ID and secret here.
           </p>
           <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
             <div className="rounded border editorial-rule p-3">
@@ -347,7 +347,7 @@ function AuthConfigsPage() {
                             <input
                               value={form.appName}
                               onChange={(e) => setForm({ ...form, appName: e.target.value })}
-                              placeholder="SMimulator"
+                              placeholder="Simulator"
                               className="mt-1 w-full rounded-sm border editorial-rule bg-background px-3 py-2 text-sm"
                             />
                           </label>
