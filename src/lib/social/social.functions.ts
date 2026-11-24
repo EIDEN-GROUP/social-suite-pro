@@ -119,6 +119,17 @@ export const syncSocialAccounts = createServerFn({ method: "POST" })
     const toolkit = data.platform ? PLATFORM_TOOLKIT[data.platform as Platform] : undefined;
     const remote = await listConnectedAccounts(data.companyId, toolkit);
 
+    // Accounts the team explicitly disconnected must not be resurrected on sync.
+    const { data: existingRows } = await supabaseAdmin
+      .from("social_accounts")
+      .select("connected_account_id,status")
+      .eq("company_id", data.companyId);
+    const disconnected = new Set(
+      (existingRows ?? [])
+        .filter((r) => r.status === "disconnected")
+        .map((r) => r.connected_account_id),
+    );
+
     // Cache capability slugs per toolkit once per sync.
     const capCache = new Map<string, string[]>();
     async function capsFor(tk: string): Promise<string[]> {
@@ -134,6 +145,7 @@ export const syncSocialAccounts = createServerFn({ method: "POST" })
     for (const acct of remote) {
       const platform = toolkitToPlatform.get(acct.toolkit);
       if (!platform) continue;
+      if (disconnected.has(acct.connectedAccountId)) continue;
       const capabilities = await capsFor(acct.toolkit);
       const status = mapStatus(acct.status);
 
@@ -142,21 +154,21 @@ export const syncSocialAccounts = createServerFn({ method: "POST" })
       // Page; otherwise leave it for the user to choose.
       let destinationId = acct.externalAccountId;
       let destinationName: string | null = null;
-      if (platform === "facebook" && !destinationId && status !== "expired") {
+      if (platform === "facebook" && !destinationId && status === "connected") {
         const pages = await listFacebookPages(data.companyId, acct.connectedAccountId);
         if (pages.length === 1) {
           destinationId = pages[0].id;
           destinationName = pages[0].name;
         }
       }
-      if (platform === "linkedin" && !destinationId && status !== "expired") {
+      if (platform === "linkedin" && !destinationId && status === "connected") {
         const author = await getLinkedInAuthor(data.companyId, acct.connectedAccountId);
         if (author) {
           destinationId = author.urn;
           destinationName = author.name;
         }
       }
-      if (platform === "instagram" && !destinationId && status !== "expired") {
+      if (platform === "instagram" && !destinationId && status === "connected") {
         const ig = await getInstagramAccount(data.companyId, acct.connectedAccountId);
         if (ig) {
           destinationId = ig.id;

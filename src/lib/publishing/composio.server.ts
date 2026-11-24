@@ -249,15 +249,19 @@ export async function listFacebookPages(
   companyId: string,
   connectedAccountId: string,
 ): Promise<Destination[]> {
-  const result = await executeTool({
-    slug: "FACEBOOK_LIST_MANAGED_PAGES",
-    companyId,
-    connectedAccountId,
-    arguments: {},
-    toolkit: "facebook",
-  });
-  if (!result.successful) return [];
-  return extractDestinations(result.data);
+  try {
+    const result = await executeTool({
+      slug: "FACEBOOK_LIST_MANAGED_PAGES",
+      companyId,
+      connectedAccountId,
+      arguments: {},
+      toolkit: "facebook",
+    });
+    if (!result.successful) return [];
+    return extractDestinations(result.data);
+  } catch {
+    return [];
+  }
 }
 
 /** Resolves the Instagram account (IG user id) for a connection. */
@@ -280,17 +284,21 @@ export async function getInstagramAccount(
   }
 
   // 2) Fallback to the toolkit action with ig_user_id="me".
-  const result = await executeTool({
-    slug: "INSTAGRAM_GET_USER_INFO",
-    companyId,
-    connectedAccountId,
-    arguments: { ig_user_id: "me", fields: "id,username" },
-    toolkit: "instagram",
-  });
-  if (result.successful && result.data) {
-    const d = result.data as Record<string, unknown>;
-    const id = d.id as string | undefined;
-    if (id) return { id: String(id), name: String(d.username ?? id) };
+  try {
+    const result = await executeTool({
+      slug: "INSTAGRAM_GET_USER_INFO",
+      companyId,
+      connectedAccountId,
+      arguments: { ig_user_id: "me", fields: "id,username" },
+      toolkit: "instagram",
+    });
+    if (result.successful && result.data) {
+      const d = result.data as Record<string, unknown>;
+      const id = d.id as string | undefined;
+      if (id) return { id: String(id), name: String(d.username ?? id) };
+    }
+  } catch {
+    /* connection not usable */
   }
   return null;
 }
@@ -300,22 +308,26 @@ export async function getLinkedInAuthor(
   companyId: string,
   connectedAccountId: string,
 ): Promise<{ urn: string; name: string } | null> {
-  const result = await executeTool({
-    slug: "LINKEDIN_GET_MY_INFO",
-    companyId,
-    connectedAccountId,
-    arguments: {},
-    toolkit: "linkedin",
-  });
-  if (!result.successful || !result.data) return null;
-  const d = result.data as Record<string, unknown>;
-  const id = (d.id ?? d.sub) as string | undefined;
-  if (!id) return null;
-  const urn = id.startsWith("urn:li:") ? id : `urn:li:person:${id}`;
-  const name =
-    `${String(d.localizedFirstName ?? "")} ${String(d.localizedLastName ?? "")}`.trim() ||
-    String(d.vanityName ?? "LinkedIn");
-  return { urn, name };
+  try {
+    const result = await executeTool({
+      slug: "LINKEDIN_GET_MY_INFO",
+      companyId,
+      connectedAccountId,
+      arguments: {},
+      toolkit: "linkedin",
+    });
+    if (!result.successful || !result.data) return null;
+    const d = result.data as Record<string, unknown>;
+    const id = (d.id ?? d.sub) as string | undefined;
+    if (!id) return null;
+    const urn = id.startsWith("urn:li:") ? id : `urn:li:person:${id}`;
+    const name =
+      `${String(d.localizedFirstName ?? "")} ${String(d.localizedLastName ?? "")}`.trim() ||
+      String(d.vanityName ?? "LinkedIn");
+    return { urn, name };
+  } catch {
+    return null;
+  }
 }
 
 /** Uploads a media URL to Composio so it can be attached to a tool call. */
