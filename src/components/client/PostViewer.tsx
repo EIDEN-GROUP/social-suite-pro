@@ -94,14 +94,14 @@ export function PostViewer({
         className="flex max-h-[92vh] w-full max-w-[1120px] overflow-hidden rounded-2xl bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Media — native aspect, videos play inline */}
-        <div className="relative flex w-[54%] shrink-0 items-center justify-center bg-[#0b0b0d]">
+        {/* Media — shrink-wrapped to its native aspect so there are no black bars */}
+        <div className="relative flex shrink-0 items-center justify-center">
           {current ? (
             currentIsVideo ? (
               <video
                 key={current}
                 src={current}
-                className="max-h-[92vh] w-full object-contain"
+                className="block max-h-[92vh] max-w-[min(64vw,860px)] object-contain"
                 controls
                 autoPlay
                 muted
@@ -114,11 +114,11 @@ export function PostViewer({
                 key={current}
                 src={current}
                 alt={post.caption ? post.caption.slice(0, 120) : "Post preview"}
-                className="max-h-[92vh] w-full object-contain"
+                className="block max-h-[92vh] max-w-[min(64vw,860px)] object-contain"
               />
             )
           ) : (
-            <div className="grid h-64 w-full place-items-center text-sm text-white/50">
+            <div className="grid h-72 w-96 place-items-center bg-[#0b0b0d] text-sm text-white/50">
               No media for this post
             </div>
           )}
