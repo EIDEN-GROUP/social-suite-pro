@@ -5,7 +5,13 @@ import { toast } from "sonner";
 import { ExternalLink, RotateCw, XCircle } from "lucide-react";
 import { Media } from "@/components/Media";
 import { AccountStatusBadge, PlatformBadge } from "@/components/social/PlatformBadge";
-import { publishingToast } from "@/components/publish-toast";
+import {
+  publishingToast,
+  publishingSuccess,
+  publishingWarning,
+  publishingError,
+  publishingDone,
+} from "@/components/publish-toast";
 import type { Platform } from "@/lib/types";
 import {
   cancelPublishingJob,
@@ -89,11 +95,11 @@ function PublishingDetail() {
     const tid = publishingToast("Publishing…");
     try {
       const res = await retry({ data: { id } });
-      if (res.status === "published") toast.success("Published ✅", { id: tid });
-      else toast.warning(res.error ?? `Status: ${res.status}`, { id: tid });
+      if (res.status === "published") publishingSuccess(tid);
+      else publishingWarning(tid, res.error ?? `Status: ${res.status}`);
       await reload();
     } catch (err) {
-      toast.error((err as Error).message, { id: tid });
+      publishingError(tid, (err as Error).message);
     } finally {
       setBusy(false);
     }
@@ -104,10 +110,10 @@ function PublishingDetail() {
     const tid = publishingToast("Cancelling…");
     try {
       await cancel({ data: { id } });
-      toast.success("Cancelled", { id: tid });
+      publishingDone(tid, "Cancelled");
       await reload();
     } catch (err) {
-      toast.error((err as Error).message, { id: tid });
+      publishingError(tid, (err as Error).message);
     } finally {
       setBusy(false);
     }
