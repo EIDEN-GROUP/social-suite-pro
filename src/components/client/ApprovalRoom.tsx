@@ -18,6 +18,7 @@ import type { Company, Highlight, Platform, Post } from "@/lib/types";
 import type { ClientSnapshot } from "@/lib/client.functions";
 import { PLATFORMS } from "@/lib/types";
 import { PhonePreview } from "@/components/PhonePreview";
+import { PostViewer } from "@/components/client/PostViewer";
 import { Media } from "@/components/Media";
 import { cn } from "@/lib/utils";
 import { formatPostedAt, postedAgo } from "@/lib/posted";
@@ -73,7 +74,7 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [mobilePane, setMobilePane] = useState<"phone" | "review">("phone");
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
   const bellRef = useRef<HTMLDivElement>(null);
 
@@ -183,6 +184,19 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
     setSelectedId(filtered[next].id);
   }
 
+  // Keyboard controls for the desktop viewer.
+  useEffect(() => {
+    if (!detailOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDetailOpen(false);
+      if (e.key === "ArrowLeft") step(-1);
+      if (e.key === "ArrowRight") step(1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detailOpen, selectedIndex, filtered]);
+
   async function decide(status: "approved" | "rejected") {
     if (!selected) return;
     if (status === "rejected" && !note.trim()) {
@@ -197,7 +211,7 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
         id: tid,
         duration: 3500,
       });
-      setSheetOpen(false);
+      setDetailOpen(false);
     } catch (err) {
       toast.error((err as Error).message, { id: tid });
     } finally {
@@ -221,7 +235,7 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
           highlights={highlights}
           onTap={(p) => {
             setSelectedId(p.id);
-            setSheetOpen(true);
+            setDetailOpen(true);
           }}
           frameClassName="max-w-none"
         />
@@ -287,7 +301,7 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
               </span>
               <span className="text-gray-300">·</span>
               <span>
-                <strong className="font-bold text-emerald-600">{counts.approved}</strong> ok
+                <strong className="font-bold text-emerald-600">{counts.approved}</strong> approved
               </span>
               <span className="text-gray-300">·</span>
               <span>
@@ -669,13 +683,18 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
                 </h3>
               </div>
               <div className="flex items-center gap-3 text-[11px] text-gray-500">
-                <span>Posted</span>
-                <span className="text-gray-300">·</span>
-                <span>OK</span>
-                <span className="text-gray-300">·</span>
-                <span>Pending</span>
-                <span className="text-gray-300">·</span>
-                <span>Changes</span>
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-sky-500" /> Posted
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" /> Approved
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-amber-400" /> Pending
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-rose-500" /> Changes
+                </span>
               </div>
             </div>
             {filtered.length === 0 ? (
@@ -688,7 +707,7 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
                     type="button"
                     onClick={() => {
                       setSelectedId(p.id);
-                      setSheetOpen(true);
+                      setDetailOpen(true);
                     }}
                     className={cn(
                       "group relative aspect-square overflow-hidden rounded-lg border-2 transition",
@@ -709,9 +728,26 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
         </section>
       </main>
 
+      {/* ---------- Desktop post viewer (modal) ---------- */}
+      {detailOpen && selected && (
+        <PostViewer
+          post={selected}
+          index={selectedIndex}
+          total={filtered.length}
+          note={note}
+          onNoteChange={setNote}
+          busy={busy}
+          onApprove={() => decide("approved")}
+          onReject={() => decide("rejected")}
+          onClose={() => setDetailOpen(false)}
+          onPrev={() => step(-1)}
+          onNext={() => step(1)}
+        />
+      )}
+
       {/* ---------- Mobile bottom sheet ---------- */}
-      {sheetOpen && selected && (
-        <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setSheetOpen(false)}>
+      {detailOpen && selected && (
+        <div className="fixed inset-0 z-50 lg:hidden" onClick={() => setDetailOpen(false)}>
           <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
           <div
             className="absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-3xl border-t border-gray-200 bg-white shadow-[0_-12px_40px_-8px_rgba(17,24,39,0.18)]"
@@ -735,7 +771,7 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
                 </div>
                 <button
                   type="button"
-                  onClick={() => setSheetOpen(false)}
+                  onClick={() => setDetailOpen(false)}
                   className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-gray-600"
                   aria-label="Close"
                 >
