@@ -102,6 +102,10 @@ export async function createConnectionLink(
   const authConfigId = await getAuthConfigId(platform, { create: true });
   const request = await composio().connectedAccounts.link(composioUserId(companyId), authConfigId, {
     callbackUrl,
+    // Allow more than one connected account per client/platform (e.g. multiple
+    // Instagram/Facebook accounts) instead of failing with "Multiple connected
+    // accounts found".
+    allowMultiple: true,
   });
   const redirectUrl = (request as { redirectUrl?: string }).redirectUrl;
   const connectionRequestId = (request as { id?: string }).id ?? "";
@@ -254,6 +258,41 @@ export async function listFacebookPages(
   });
   if (!result.successful) return [];
   return extractDestinations(result.data);
+}
+
+/** Resolves the Instagram account (IG user id) for a connection. */
+export async function getInstagramAccount(
+  companyId: string,
+  connectedAccountId: string,
+): Promise<Destination | null> {
+  // 1) Ask the Instagram Graph for the authenticated account.
+  try {
+    const res = (await composio().tools.proxyExecute({
+      endpoint: "me?fields=id,username,name",
+      method: "GET",
+      connectedAccountId,
+    })) as { data?: Record<string, unknown> };
+    const d = res.data ?? {};
+    const id = d.id as string | undefined;
+    if (id) return { id: String(id), name: String(d.username ?? d.name ?? id) };
+  } catch {
+    /* fall through to the toolkit action */
+  }
+
+  // 2) Fallback to the toolkit action with ig_user_id="me".
+  const result = await executeTool({
+    slug: "INSTAGRAM_GET_USER_INFO",
+    companyId,
+    connectedAccountId,
+    arguments: { ig_user_id: "me", fields: "id,username" },
+    toolkit: "instagram",
+  });
+  if (result.successful && result.data) {
+    const d = result.data as Record<string, unknown>;
+    const id = d.id as string | undefined;
+    if (id) return { id: String(id), name: String(d.username ?? id) };
+  }
+  return null;
 }
 
 /** Resolves the LinkedIn member URN that posts should be authored by. */

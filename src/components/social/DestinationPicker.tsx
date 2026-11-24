@@ -10,6 +10,16 @@ const LABEL: Partial<Record<Platform, string>> = {
   instagram: "Instagram account",
 };
 
+function emptyHint(platform: Platform): string {
+  if (platform === "facebook") {
+    return "No Facebook Pages found. During the Facebook login, choose “Edit access” and enable at least one Page, then click Sync on this account.";
+  }
+  if (platform === "instagram") {
+    return "No Instagram account found. Instagram publishing needs an Instagram Business/Creator account linked to a Facebook Page you manage. Link one, then click Sync on this account.";
+  }
+  return "This connection returned no destinations.";
+}
+
 /**
  * Lets the team pick the concrete destination a connected account publishes to
  * (e.g. a specific Facebook Page). Without a selection a Facebook account
@@ -99,9 +109,7 @@ export function DestinationPicker({
             {loading ? (
               <p className="p-6 text-sm text-muted-foreground">Loading…</p>
             ) : items.length === 0 ? (
-              <p className="p-6 text-sm text-muted-foreground">
-                This connection returned no {label}s. Check the account's permissions.
-              </p>
+              <p className="p-6 text-sm text-muted-foreground">{emptyHint(platform)}</p>
             ) : (
               <ul className="divide-y editorial-rule">
                 {items.map((d) => (

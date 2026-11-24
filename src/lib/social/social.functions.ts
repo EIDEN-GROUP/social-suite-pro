@@ -110,6 +110,7 @@ export const syncSocialAccounts = createServerFn({ method: "POST" })
       listToolkitToolSlugs,
       listFacebookPages,
       getLinkedInAuthor,
+      getInstagramAccount,
       PLATFORM_TOOLKIT,
       composioUserId,
     } = await import("@/lib/publishing/composio.server");
@@ -153,6 +154,13 @@ export const syncSocialAccounts = createServerFn({ method: "POST" })
         if (author) {
           destinationId = author.urn;
           destinationName = author.name;
+        }
+      }
+      if (platform === "instagram" && !destinationId && status !== "expired") {
+        const ig = await getInstagramAccount(data.companyId, acct.connectedAccountId);
+        if (ig) {
+          destinationId = ig.id;
+          destinationName = ig.name;
         }
       }
 
@@ -286,7 +294,8 @@ export const listSocialDestinations = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await (await import("@/lib/server-auth.server")).requireSuperadmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { listFacebookPages } = await import("@/lib/publishing/composio.server");
+    const { listFacebookPages, getInstagramAccount } =
+      await import("@/lib/publishing/composio.server");
 
     const { data: account } = await supabaseAdmin
       .from("social_accounts")
@@ -298,6 +307,10 @@ export const listSocialDestinations = createServerFn({ method: "POST" })
     if (account.platform === "facebook") {
       const pages = await listFacebookPages(account.company_id, account.connected_account_id);
       return { destinations: pages, selected: account.external_account_id };
+    }
+    if (account.platform === "instagram") {
+      const ig = await getInstagramAccount(account.company_id, account.connected_account_id);
+      return { destinations: ig ? [ig] : [], selected: account.external_account_id };
     }
     return { destinations: [], selected: account.external_account_id };
   });
