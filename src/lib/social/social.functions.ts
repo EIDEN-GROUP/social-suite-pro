@@ -31,7 +31,7 @@ export const platformAvailability = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("integration_configs")
-      .select("platform, auth_config_id, enabled");
+      .select("platform, auth_config_id, enabled, auth_mode");
     const configs = new Map((data ?? []).map((c) => [c.platform, c]));
     return {
       configured: isComposioConfigured(),
@@ -41,6 +41,7 @@ export const platformAvailability = createServerFn({ method: "POST" })
           Boolean(configs.get(p)?.auth_config_id) ||
           Boolean(process.env[`COMPOSIO_AUTH_CONFIG_${p.toUpperCase()}`]),
         enabled: configs.get(p)?.enabled ?? true,
+        mode: (configs.get(p)?.auth_mode as "managed" | "custom" | undefined) ?? "managed",
       })),
     };
   });
@@ -84,14 +85,123 @@ export const getConnectionLink = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     await (await import("@/lib/server-auth.server")).requireSuperadmin();
-    const { createConnectionLink } = await import("@/lib/publishing/composio.server");
+    const { startConnection } = await import("@/lib/publishing/composio.server");
     const { getRequest } = await import("@tanstack/react-start/server");
     const request = getRequest();
     const requestOrigin = request ? new URL(request.url).origin : "";
     const base = (process.env.APP_BASE_URL || requestOrigin).replace(/\/$/, "");
     if (!base) throw new Error("Could not determine the app base URL for the OAuth callback.");
     const callbackUrl = `${base}/admin/connect?connected=1&company=${data.companyId}&platform=${data.platform}`;
-    return createConnectionLink(data.companyId, data.platform as Platform, callbackUrl);
+    return startConnection(data.companyId, data.platform as Platform, callbackUrl);
+  });
+
+/**
+ * Auth setup for every platform: whether it uses Composio-managed auth or our
+ * own OAuth app, the redirect URI to whitelist, and where to register the app.
+ * Secrets are never returned.
+ */
+export const listAuthSetups = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({}).parse(input ?? {}))
+  .handler(async () => {
+    await (await import("@/lib/server-auth.server")).requireSuperadmin();
+    const { getAuthConfigInfo, AUTH_PROVIDER_META, COMPOSIO_OAUTH_CALLBACK } =
+      await import("@/lib/publishing/composio.server");
+    const setups = await Promise.all(
+      PLATFORMS.map(async (p) => {
+        const info = await getAuthConfigInfo(p);
+        return { ...info, provider: AUTH_PROVIDER_META[p], callback: COMPOSIO_OAUTH_CALLBACK };
+      }),
+    );
+    return { setups };
+  });
+
+/** Creates/updates a custom OAuth config from the team's own OAuth app. */
+export const saveCustomAuth = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        platform: z.enum(PLATFORMS),
+        appName: z.string().trim().min(1).max(80),
+        clientId: z.string().trim().min(8).max(500),
+        clientSecret: z.string().trim().min(8).max(500),
+        scopes: z.string().trim().max(2000).optional(),
+        redirectUri: z.string().url().max(500).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }) => {
+    await (await import("@/lib/server-auth.server")).requireSuperadmin();
+    const { createCustomOAuthConfig, getAuthConfigInfo } =
+      await import("@/lib/publishing/composio.server");
+    try {
+      const { authConfigId } = await createCustomOAuthConfig({
+        platform: data.platform as Platform,
+        appName: data.appName,
+        clientId: data.clientId,
+        clientSecret: data.clientSecret,
+        scopes: data.scopes,
+        redirectUri: data.redirectUri,
+      });
+      await (
+        await import("@/integrations/supabase/client.server")
+      ).supabaseAdmin
+        .from("integration_events")
+        .insert({
+          type: "auth_config_created",
+          message: `Custom OAuth app configured for ${data.platform} (${authConfigId})`,
+        })
+        .then(({ error }) => {
+          if (error) console.warn("auth event not recorded:", error.message);
+        });
+      return {
+        ok: true as const,
+        authConfigId,
+        info: await getAuthConfigInfo(data.platform as Platform),
+      };
+    } catch (err) {
+      const message = (err as Error).message;
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.from("integration_configs").upsert(
+        {
+          platform: data.platform,
+          toolkit: data.platform,
+          provisioning_error: message.slice(0, 500),
+        },
+        { onConflict: "platform" },
+      );
+      throw new Error(message);
+    }
+  });
+
+/** Switches a platform back to Composio-managed auth. */
+export const useManagedAuth = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({ platform: z.enum(PLATFORMS) }).parse(input))
+  .handler(async ({ data }) => {
+    await (await import("@/lib/server-auth.server")).requireSuperadmin();
+    const { clearCustomOAuthConfig, getAuthConfigInfo } =
+      await import("@/lib/publishing/composio.server");
+    await clearCustomOAuthConfig(data.platform as Platform);
+    await (
+      await import("@/integrations/supabase/client.server")
+    ).supabaseAdmin
+      .from("integration_events")
+      .insert({
+        type: "auth_config_reset",
+        message: `${data.platform} switched back to Composio-managed auth`,
+      })
+      .then(({ error }) => {
+        if (error) console.warn("auth event not recorded:", error.message);
+      });
+    return { ok: true as const, info: await getAuthConfigInfo(data.platform as Platform) };
+  });
+
+/** Required credential fields for a custom OAuth2 config (for the setup form). */
+export const authCredentialFields = createServerFn({ method: "POST" })
+  .inputValidator((input) => z.object({ platform: z.enum(PLATFORMS) }).parse(input))
+  .handler(async ({ data }) => {
+    await (await import("@/lib/server-auth.server")).requireSuperadmin();
+    const { getOAuthCredentialFields } = await import("@/lib/publishing/composio.server");
+    return { fields: await getOAuthCredentialFields(data.platform as Platform) };
   });
 
 /**

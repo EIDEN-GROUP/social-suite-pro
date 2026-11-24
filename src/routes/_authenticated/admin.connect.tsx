@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowRight, Check, Lock } from "lucide-react";
+import { ArrowRight, Check, Loader2, Lock, ShieldCheck, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Company, Platform } from "@/lib/types";
 import { PLATFORMS } from "@/lib/types";
@@ -25,7 +25,12 @@ export const Route = createFileRoute("/_authenticated/admin/connect")({
   component: ConnectPage,
 });
 
-type Availability = { platform: Platform; configured: boolean; enabled: boolean };
+type Availability = {
+  platform: Platform;
+  configured: boolean;
+  enabled: boolean;
+  mode: "managed" | "custom";
+};
 
 function ConnectPage() {
   const search = Route.useSearch();
@@ -160,6 +165,15 @@ function ConnectPage() {
                 >
                   <span className="flex items-center gap-3">
                     <PlatformBadge platform={p.id} />
+                    {avail?.mode === "custom" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                        <ShieldCheck className="h-3 w-3" /> Own app
+                      </span>
+                    ) : (
+                      <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                        Composio
+                      </span>
+                    )}
                   </span>
                   <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
                     {connecting === p.id ? "Opening…" : disabled ? "Not configured" : "Connect"}
@@ -173,6 +187,12 @@ function ConnectPage() {
             <Lock className="h-3.5 w-3.5" /> You'll be taken to the provider to authorize. Tokens
             are stored by Composio, never in this app.
           </p>
+          <Link
+            to="/admin/auth-configs"
+            className="mt-2 inline-flex items-center gap-1 text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground"
+          >
+            Use your own OAuth app (custom consent screen) <ArrowRight className="h-3 w-3" />
+          </Link>
         </div>
 
         {selectedCompany && (
@@ -218,6 +238,41 @@ function ConnectPage() {
           </div>
         )}
       </div>
+
+      {/* Our own connecting screen while the browser heads to the provider */}
+      {connecting && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-foreground/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-lg border editorial-rule bg-background p-6 shadow-2xl">
+            <div className="flex items-start justify-between">
+              <span className="text-xs uppercase tracking-widest text-muted-foreground">
+                Connecting
+              </span>
+              <button
+                type="button"
+                onClick={() => setConnecting(null)}
+                aria-label="Cancel"
+                className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:bg-foreground/5"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="mt-4 flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-foreground/60" />
+              <div className="min-w-0">
+                <p className="truncate font-display text-xl">
+                  {PLATFORMS.find((p) => p.id === connecting)?.label}
+                </p>
+                <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                  You'll authorize on the provider, then come straight back here.
+                </p>
+              </div>
+            </div>
+            <p className="mt-4 flex items-center gap-1.5 border-t editorial-rule pt-3 text-[11px] text-muted-foreground">
+              <Lock className="h-3 w-3" /> Tokens are stored by Composio, never in this app.
+            </p>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

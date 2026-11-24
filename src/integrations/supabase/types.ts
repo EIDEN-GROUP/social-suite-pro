@@ -241,29 +241,47 @@ export type Database = {
       };
       integration_configs: {
         Row: {
+          app_name: string | null;
           auth_config_id: string | null;
+          auth_mode: string;
           created_at: string;
           enabled: boolean;
           id: string;
+          oauth_redirect_uri: string | null;
           platform: Database["public"]["Enums"]["platform"];
+          provisioned_at: string | null;
+          provisioning_error: string | null;
+          scopes: string | null;
           toolkit: string;
           updated_at: string;
         };
         Insert: {
+          app_name?: string | null;
           auth_config_id?: string | null;
+          auth_mode?: string;
           created_at?: string;
           enabled?: boolean;
           id?: string;
+          oauth_redirect_uri?: string | null;
           platform: Database["public"]["Enums"]["platform"];
+          provisioned_at?: string | null;
+          provisioning_error?: string | null;
+          scopes?: string | null;
           toolkit: string;
           updated_at?: string;
         };
         Update: {
+          app_name?: string | null;
           auth_config_id?: string | null;
+          auth_mode?: string;
           created_at?: string;
           enabled?: boolean;
           id?: string;
+          oauth_redirect_uri?: string | null;
           platform?: Database["public"]["Enums"]["platform"];
+          provisioned_at?: string | null;
+          provisioning_error?: string | null;
+          scopes?: string | null;
           toolkit?: string;
           updated_at?: string;
         };
@@ -648,7 +666,9 @@ export type Database = {
         | "disconnected"
         | "expired"
         | "error"
-        | "synced";
+        | "synced"
+        | "auth_config_created"
+        | "auth_config_reset";
       platform: "instagram" | "tiktok" | "facebook" | "twitter" | "linkedin";
       post_type: "post" | "reel" | "story" | "carousel";
       publishing_job_kind: "immediate" | "scheduled";

@@ -154,6 +154,12 @@ function AdminHome() {
             Connect
           </Link>
           <Link
+            to="/admin/auth-configs"
+            className="uppercase tracking-widest text-muted-foreground hover:text-foreground"
+          >
+            Auth setup
+          </Link>
+          <Link
             to="/admin/publishing"
             className="uppercase tracking-widest text-muted-foreground hover:text-foreground"
           >
