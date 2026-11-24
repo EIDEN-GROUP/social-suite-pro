@@ -14,6 +14,7 @@ export const getClientAnalytics = createServerFn({ method: "POST" })
       .object({
         companyId: z.string().uuid(),
         range: z.enum(["7d", "30d", "all"]).optional(),
+        granularity: z.enum(["week", "month", "year"]).optional(),
       })
       .parse(input),
   )
@@ -141,7 +142,8 @@ export const getClientAnalytics = createServerFn({ method: "POST" })
       : 0;
 
     // ---- Time series (created vs published) ----
-    const byMonth = range === "all";
+    const granularity = data.granularity ?? (range === "all" ? "month" : "week");
+    const pad = (n: number) => String(n).padStart(2, "0");
     const bucketMap = new Map<
       string,
       { key: string; label: string; Created: number; Published: number }
@@ -149,14 +151,24 @@ export const getClientAnalytics = createServerFn({ method: "POST" })
     const bucket = (iso: string) => {
       const d = new Date(iso);
       if (Number.isNaN(d.getTime())) return null;
-      const key = byMonth
-        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
-        : d.toISOString().slice(0, 10);
+      let key: string;
+      let label: string;
+      if (granularity === "year") {
+        key = String(d.getFullYear());
+        label = key;
+      } else if (granularity === "month") {
+        key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+        label = d.toLocaleDateString(undefined, { month: "short", year: "2-digit" });
+      } else {
+        // Week, starting Monday.
+        const start = new Date(d);
+        const offset = (start.getDay() + 6) % 7;
+        start.setDate(start.getDate() - offset);
+        key = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`;
+        label = start.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+      }
       let b = bucketMap.get(key);
       if (!b) {
-        const label = byMonth
-          ? d.toLocaleDateString(undefined, { month: "short", year: "2-digit" })
-          : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
         b = { key, label, Created: 0, Published: 0 };
         bucketMap.set(key, b);
       }
@@ -219,6 +231,7 @@ export const getClientAnalytics = createServerFn({ method: "POST" })
 
     return {
       range,
+      granularity,
       totals: {
         posts: postList.length,
         pending: postList.filter((p) => p.status === "pending").length,

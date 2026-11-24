@@ -33,18 +33,24 @@ export function ClientAnalytics({ company }: { company: Company }) {
   const [data, setData] = useState<Awaited<ReturnType<typeof load>> | null>(null);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState<"7d" | "30d" | "all">("all");
+  const [granularity, setGranularity] = useState<"week" | "month" | "year">("month");
+
+  // Sensible default grouping per range (user can still override).
+  useEffect(() => {
+    setGranularity(range === "all" ? "month" : "week");
+  }, [range]);
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    load({ data: { companyId: company.id, range } })
+    load({ data: { companyId: company.id, range, granularity } })
       .then((res) => alive && setData(res))
       .catch((err) => toast.error((err as Error).message))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, [company.id, load, range]);
+  }, [company.id, load, range, granularity]);
 
   if (loading)
     return <p className="py-16 text-center text-sm text-muted-foreground">Loading analytics…</p>;
@@ -158,9 +164,27 @@ export function ClientAnalytics({ company }: { company: Company }) {
 
           {/* Content created vs published */}
           <div className="rounded border editorial-rule p-5">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">
-              Content created vs published over time
-            </p>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                Content created vs published over time
+              </p>
+              <div className="flex border editorial-rule">
+                {(["week", "month", "year"] as const).map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setGranularity(g)}
+                    className={`px-3 py-1 text-[11px] uppercase tracking-widest ${
+                      granularity === g
+                        ? "bg-foreground text-background"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+            </div>
             {timeSeries.length === 0 ? (
               <p className="mt-3 text-sm text-muted-foreground">No activity in this range.</p>
             ) : (
