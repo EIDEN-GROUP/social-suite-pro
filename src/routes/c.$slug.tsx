@@ -11,6 +11,7 @@ import {
   type CompanyBranding,
 } from "@/lib/client.functions";
 import { Media } from "@/components/Media";
+import { ApprovalRoom } from "@/components/client/ApprovalRoom";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import lunjaWordmark from "@/assets/lunja-wordmark-white.png";
 import {
@@ -155,7 +156,7 @@ function ClientRoom() {
   }
 
   return (
-    <ReviewPhone
+    <ApprovalRoom
       company={company}
       posts={posts}
       highlights={highlights}
@@ -196,143 +197,143 @@ function AtelierLogin({ slug, branding, pw, setPw, submitting, onSubmit }: Login
   );
 
   return (
-      <main className="lunja-auth grid min-h-screen grid-cols-1 lg:grid-cols-[1.05fr_1fr]">
-        {/* LEFT - looping atelier side video: sketching, print proofs, swatches, tabletop */}
-        <section className="relative hidden flex-col justify-between overflow-hidden p-12 text-[#fdf8ee] lg:flex xl:p-16">
-          <AtelierLoop accent={accent} />
+    <main className="lunja-auth grid min-h-screen grid-cols-1 lg:grid-cols-[1.05fr_1fr]">
+      {/* LEFT - looping atelier side video: sketching, print proofs, swatches, tabletop */}
+      <section className="relative hidden flex-col justify-between overflow-hidden p-12 text-[#fdf8ee] lg:flex xl:p-16">
+        <AtelierLoop accent={accent} />
 
-          {/* Swiss hairline grid + readability scrim over the loop */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-[0.16] [background-image:linear-gradient(#fdf8ee_1px,transparent_1px),linear-gradient(90deg,#fdf8ee_1px,transparent_1px)] [background-size:64px_64px]"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1a1208]/90 via-[#1a1208]/45 to-[#1a1208]/25"
-          />
+        {/* Swiss hairline grid + readability scrim over the loop */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.16] [background-image:linear-gradient(#fdf8ee_1px,transparent_1px),linear-gradient(90deg,#fdf8ee_1px,transparent_1px)] [background-size:64px_64px]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1a1208]/90 via-[#1a1208]/45 to-[#1a1208]/25"
+        />
 
-          <div className="relative z-10 flex items-center gap-3">
-            <BrandMark size="h-11 w-11" />
+        <div className="relative z-10 flex items-center gap-3">
+          <BrandMark size="h-11 w-11" />
+          <div className="min-w-0">
+            <p className="lj-eyebrow text-[10px] uppercase text-[#fdf8ee]/70">Approval room</p>
+            <p className="lj-serif truncate text-xl leading-tight">{brandName || `/${slug}`}</p>
+          </div>
+        </div>
+
+        <div className="relative z-10">
+          <span className="lj-eyebrow inline-flex items-center gap-2 rounded-full border border-[#fdf8ee]/25 bg-[#1a1208]/30 px-3 py-1 text-[10px] uppercase text-[#fdf8ee]/85 backdrop-blur-sm">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#f96635]" />
+            The studio, in session
+          </span>
+          <h1 className="lj-serif mt-6 text-6xl leading-[0.95] xl:text-7xl">
+            Your work,
+            <br />
+            <span className="lj-gradient italic">ready for review.</span>
+          </h1>
+          <p className="mt-5 max-w-md text-base text-[#fdf8ee]/80">
+            Swipe through every post, reel and story in true-to-life mockups - then approve or
+            request changes in a single tap.
+          </p>
+
+          {/* Decision chips as translucent glass modules */}
+          <div className="mt-9 flex flex-wrap gap-3">
+            <span className="lj-glass flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 text-[#1a1208]">
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-[#2bbaa5] text-white">
+                <Check className="h-4 w-4" />
+              </span>
+              <span className="text-xs">
+                <span className="block font-semibold">Approved</span>
+                <span className="text-[#3d2c1e]/70">Reel · just now</span>
+              </span>
+            </span>
+            <span className="lj-glass flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 text-[#1a1208]">
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-[#f96635] text-white">
+                <MessageCircle className="h-4 w-4" />
+              </span>
+              <span className="text-xs">
+                <span className="block font-semibold">“Brighten the logo?”</span>
+                <span className="text-[#3d2c1e]/70">Your comment</span>
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <div className="relative z-10 flex items-center gap-3">
+          <img src={lunjaWordmark} alt="Lunja" className="h-6 w-auto opacity-90" />
+          <span className="h-4 w-px bg-[#fdf8ee]/25" />
+          <p className="lj-eyebrow text-[10px] uppercase text-[#fdf8ee]/55">
+            Powered by eiden-group
+          </p>
+        </div>
+      </section>
+
+      {/* RIGHT - sign-in form on warm paper with a shifting Mondrian grid */}
+      <section className="relative flex items-center justify-center overflow-hidden bg-[#fdf8ee] p-6 sm:p-10">
+        <MondrianGrid accent={accent} />
+
+        <div className="lj-glass animate-rise relative z-10 w-full max-w-sm rounded-[28px] p-7 sm:p-9">
+          {/* Brand header (shows on mobile where the left panel is hidden) */}
+          <div className="mb-7 flex items-center gap-3 lg:hidden">
+            <BrandMark size="h-12 w-12" />
             <div className="min-w-0">
-              <p className="lj-eyebrow text-[10px] uppercase text-[#fdf8ee]/70">Approval room</p>
+              <p className="lj-eyebrow text-[10px] uppercase text-[#3d2c1e]/70">Approval room</p>
               <p className="lj-serif truncate text-xl leading-tight">{brandName || `/${slug}`}</p>
             </div>
           </div>
 
-          <div className="relative z-10">
-            <span className="lj-eyebrow inline-flex items-center gap-2 rounded-full border border-[#fdf8ee]/25 bg-[#1a1208]/30 px-3 py-1 text-[10px] uppercase text-[#fdf8ee]/85 backdrop-blur-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#f96635]" />
-              The studio, in session
-            </span>
-            <h1 className="lj-serif mt-6 text-6xl leading-[0.95] xl:text-7xl">
-              Your work,
-              <br />
-              <span className="lj-gradient italic">ready for review.</span>
-            </h1>
-            <p className="mt-5 max-w-md text-base text-[#fdf8ee]/80">
-              Swipe through every post, reel and story in true-to-life mockups - then approve or
-              request changes in a single tap.
-            </p>
+          <p className="lj-eyebrow text-[10px] uppercase text-[#3d2c1e]/65">Welcome</p>
+          <h2 className="lj-serif mt-2 text-4xl leading-tight text-[#1a1208]">
+            Enter your workspace
+          </h2>
+          <p className="mt-3 text-sm text-[#3d2c1e]/80">
+            {brandName ? (
+              <>
+                Use the password your studio shared to open the{" "}
+                <strong className="font-semibold text-[#1a1208]">{brandName}</strong> room.
+              </>
+            ) : (
+              <>
+                Your studio shared a password for{" "}
+                <strong className="font-semibold text-[#1a1208]">/{slug}</strong>.
+              </>
+            )}
+          </p>
 
-            {/* Decision chips as translucent glass modules */}
-            <div className="mt-9 flex flex-wrap gap-3">
-              <span className="lj-glass flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 text-[#1a1208]">
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-[#2bbaa5] text-white">
-                  <Check className="h-4 w-4" />
-                </span>
-                <span className="text-xs">
-                  <span className="block font-semibold">Approved</span>
-                  <span className="text-[#3d2c1e]/70">Reel · just now</span>
-                </span>
+          <form onSubmit={onSubmit} className="mt-8">
+            <label className="lj-module block rounded-2xl px-4 py-3">
+              <span className="lj-eyebrow text-[10px] uppercase text-[#3d2c1e]/65">
+                Workspace password
               </span>
-              <span className="lj-glass flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 text-[#1a1208]">
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-[#f96635] text-white">
-                  <MessageCircle className="h-4 w-4" />
-                </span>
-                <span className="text-xs">
-                  <span className="block font-semibold">“Brighten the logo?”</span>
-                  <span className="text-[#3d2c1e]/70">Your comment</span>
-                </span>
-              </span>
-            </div>
-          </div>
-
-          <div className="relative z-10 flex items-center gap-3">
-            <img src={lunjaWordmark} alt="Lunja" className="h-6 w-auto opacity-90" />
-            <span className="h-4 w-px bg-[#fdf8ee]/25" />
-            <p className="lj-eyebrow text-[10px] uppercase text-[#fdf8ee]/55">
-              Powered by eiden-group
-            </p>
-          </div>
-        </section>
-
-        {/* RIGHT - sign-in form on warm paper with a shifting Mondrian grid */}
-        <section className="relative flex items-center justify-center overflow-hidden bg-[#fdf8ee] p-6 sm:p-10">
-          <MondrianGrid accent={accent} />
-
-          <div className="lj-glass animate-rise relative z-10 w-full max-w-sm rounded-[28px] p-7 sm:p-9">
-            {/* Brand header (shows on mobile where the left panel is hidden) */}
-            <div className="mb-7 flex items-center gap-3 lg:hidden">
-              <BrandMark size="h-12 w-12" />
-              <div className="min-w-0">
-                <p className="lj-eyebrow text-[10px] uppercase text-[#3d2c1e]/70">Approval room</p>
-                <p className="lj-serif truncate text-xl leading-tight">{brandName || `/${slug}`}</p>
+              <div className="relative mt-1">
+                <Lock className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[#3d2c1e]/55" />
+                <input
+                  type="password"
+                  autoFocus
+                  value={pw}
+                  onChange={(e) => setPw(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-transparent py-1 pl-7 text-base text-[#1a1208] outline-none placeholder:text-[#3d2c1e]/35"
+                />
               </div>
-            </div>
-
-            <p className="lj-eyebrow text-[10px] uppercase text-[#3d2c1e]/65">Welcome</p>
-            <h2 className="lj-serif mt-2 text-4xl leading-tight text-[#1a1208]">
-              Enter your workspace
-            </h2>
-            <p className="mt-3 text-sm text-[#3d2c1e]/80">
-              {brandName ? (
-                <>
-                  Use the password your studio shared to open the{" "}
-                  <strong className="font-semibold text-[#1a1208]">{brandName}</strong> room.
-                </>
-              ) : (
-                <>
-                  Your studio shared a password for{" "}
-                  <strong className="font-semibold text-[#1a1208]">/{slug}</strong>.
-                </>
+            </label>
+            <button
+              disabled={submitting || !pw}
+              className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-white shadow-lg shadow-[#1a1208]/15 transition hover:scale-[1.02] active:scale-100 disabled:opacity-50"
+              style={{ background: accent || "#1a1208" }}
+            >
+              {submitting ? "…" : "Enter the room"}
+              {!submitting && (
+                <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
               )}
-            </p>
+            </button>
+          </form>
 
-            <form onSubmit={onSubmit} className="mt-8">
-              <label className="lj-module block rounded-2xl px-4 py-3">
-                <span className="lj-eyebrow text-[10px] uppercase text-[#3d2c1e]/65">
-                  Workspace password
-                </span>
-                <div className="relative mt-1">
-                  <Lock className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[#3d2c1e]/55" />
-                  <input
-                    type="password"
-                    autoFocus
-                    value={pw}
-                    onChange={(e) => setPw(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full bg-transparent py-1 pl-7 text-base text-[#1a1208] outline-none placeholder:text-[#3d2c1e]/35"
-                  />
-                </div>
-              </label>
-              <button
-                disabled={submitting || !pw}
-                className="group mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-sm font-bold text-white shadow-lg shadow-[#1a1208]/15 transition hover:scale-[1.02] active:scale-100 disabled:opacity-50"
-                style={{ background: accent || "#1a1208" }}
-              >
-                {submitting ? "…" : "Enter the room"}
-                {!submitting && (
-                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                )}
-              </button>
-            </form>
-
-            <p className="lj-eyebrow mt-8 text-[10px] uppercase text-[#3d2c1e]/55">
-              Reviewed in seconds - no account needed.
-            </p>
-          </div>
-        </section>
-      </main>
+          <p className="lj-eyebrow mt-8 text-[10px] uppercase text-[#3d2c1e]/55">
+            Reviewed in seconds - no account needed.
+          </p>
+        </div>
+      </section>
+    </main>
   );
 }
 
@@ -703,12 +704,7 @@ function StudioDemo({
                 <div className="mt-3 grid grid-cols-3 gap-1">
                   {STUDIO_SHOTS.map((src, i) => (
                     <span key={i} className="relative aspect-square overflow-hidden rounded-md">
-                      <img
-                        src={src}
-                        alt=""
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
+                      <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
                       <span
                         className="absolute bottom-1 left-1 h-1.5 w-1.5 rounded-full ring-1 ring-white/80"
                         style={{ background: STUDIO_TILE_OK[i] ? "#16b981" : accent }}
@@ -1305,7 +1301,10 @@ function PostedBell({
                 {g.items.map((p) => {
                   const future = p.posted_at ? new Date(p.posted_at).getTime() > Date.now() : false;
                   return (
-                    <li key={p.id} className="flex items-center gap-3 rounded-xl p-2 hover:bg-foreground/[0.03]">
+                    <li
+                      key={p.id}
+                      className="flex items-center gap-3 rounded-xl p-2 hover:bg-foreground/[0.03]"
+                    >
                       <button
                         onClick={() => {
                           markSeen([p.id]);

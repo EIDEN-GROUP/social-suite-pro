@@ -20,6 +20,7 @@ import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from "@d
 import { CSS } from "@dnd-kit/utilities";
 import { Media } from "@/components/Media";
 import { ClientSocialAccounts } from "@/components/social/ClientSocialAccounts";
+import { ClientAnalytics } from "@/components/analytics/ClientAnalytics";
 import { Trash2, Play, Images, CalendarDays, Rocket } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/companies/$slug")({
@@ -63,6 +64,7 @@ function CompanyAdmin() {
   const [picBusy, setPicBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [tab, setTab] = useState<"content" | "analytics">("content");
 
   const loadPosts = useCallback(async (companyId: string, pf: Platform) => {
     const { data: ps } = await supabase
@@ -327,7 +329,38 @@ function CompanyAdmin() {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 py-8 lg:grid-cols-[380px_1fr]">
+      <div className="mx-auto max-w-7xl px-6 pt-6">
+        <div className="inline-flex border editorial-rule">
+          {(
+            [
+              ["content", "Content"],
+              ["analytics", "Analytics"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`px-4 py-2 text-xs uppercase tracking-widest ${tab === id ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {tab === "analytics" && (
+        <div className="mx-auto max-w-7xl px-6 py-8">
+          <ClientAnalytics company={company} />
+        </div>
+      )}
+
+      <div
+        className={
+          tab === "content"
+            ? "mx-auto grid max-w-7xl grid-cols-1 gap-8 px-6 py-8 lg:grid-cols-[380px_1fr]"
+            : "hidden"
+        }
+      >
         {/* LEFT - live phone preview */}
         <aside className="lg:sticky lg:top-6 lg:self-start">
           <div className="rounded border editorial-rule p-4">
