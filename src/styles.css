@@ -267,6 +267,40 @@
   animation: risein 0.7s ease both;
 }
 
+/* Client approval room: platform/device transition */
+@keyframes platformIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-platform-in {
+  animation: platformIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes deviceIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-device-in {
+  animation: deviceIn 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-platform-in,
+  .animate-device-in {
+    animation: none;
+  }
+}
+
 .ig-gradient {
   background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
 }

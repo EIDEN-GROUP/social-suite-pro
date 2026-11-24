@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   BadgeCheck,
@@ -32,23 +32,20 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "posted", label: "Posted" },
 ];
 
-const STATUS: Record<string, { label: string; dot: string; pill: string }> = {
+const STATUS: Record<string, { label: string; pill: string }> = {
   pending: {
     label: "Pending",
-    dot: "bg-amber-400",
     pill: "bg-amber-50 text-amber-700 border-amber-200",
   },
   approved: {
     label: "Approved",
-    dot: "bg-emerald-500",
     pill: "bg-emerald-50 text-emerald-700 border-emerald-200",
   },
   rejected: {
     label: "Changes",
-    dot: "bg-rose-500",
     pill: "bg-rose-50 text-rose-700 border-rose-200",
   },
-  posted: { label: "Posted", dot: "bg-sky-500", pill: "bg-sky-50 text-sky-700 border-sky-200" },
+  posted: { label: "Posted", pill: "bg-sky-50 text-sky-700 border-sky-200" },
 };
 
 const QUICK_CHIPS = ["Adjust crop", "Update copy", "Ready to publish", "Loved it"];
@@ -78,6 +75,7 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
   const [mobilePane, setMobilePane] = useState<"phone" | "review">("phone");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
+  const bellRef = useRef<HTMLDivElement>(null);
 
   const counts = useMemo(() => {
     const c = { pending: 0, approved: 0, rejected: 0, posted: 0 };
@@ -132,6 +130,52 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
     [posts],
   );
 
+  const seenKey = `smim-room-seen-${company.id}`;
+  const [seenIds, setSeenIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(seenKey);
+      setSeenIds(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      setSeenIds([]);
+    }
+  }, [seenKey]);
+
+  // Close the activity popover on outside click / Escape.
+  useEffect(() => {
+    if (!bellOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) setBellOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setBellOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [bellOpen]);
+
+  const unseenPosted = useMemo(
+    () => postedItems.filter((p) => !seenIds.includes(p.id)),
+    [postedItems, seenIds],
+  );
+
+  function markAllRead() {
+    const ids = Array.from(new Set([...seenIds, ...postedItems.map((p) => p.id)]));
+    setSeenIds(ids);
+    try {
+      localStorage.setItem(seenKey, JSON.stringify(ids));
+    } catch {
+      /* storage unavailable - badge returns next visit */
+    }
+    setBellOpen(false);
+    toast.success("All activity marked as read");
+  }
+
   function step(dir: -1 | 1) {
     if (selectedIndex < 0) return;
     const next = selectedIndex + dir;
@@ -162,10 +206,13 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
   }
 
   const phone = (
-    <div className="flex w-full flex-col items-center gap-3">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-2.5">
       <div
-        className="mx-auto w-full"
-        style={{ maxWidth: "min(440px, calc((100dvh - 110px) * 0.4615 + 24px))" }}
+        key={platform}
+        className="animate-device-in mx-auto w-full"
+        style={{
+          maxWidth: "min(calc(100vw - 28px), 372px, calc((100dvh - 158px) * 0.4615 + 24px))",
+        }}
       >
         <PhonePreview
           platform={platform}
@@ -179,28 +226,20 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
           frameClassName="max-w-none"
         />
       </div>
-      <p className="flex items-center gap-1.5 text-[11px] font-medium text-ink-soft/70">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+      <p className="text-[11px] font-medium text-ink-soft/70">
         Live preview · tap any tile to review
       </p>
     </div>
   );
 
   return (
-    <div className="flex min-h-[100dvh] flex-col bg-[#F7F7F8] text-[#111827]">
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-[#F7F7F8] text-[#111827]">
       {/* ---------- Header ---------- */}
-      <header className="sticky top-0 z-40 h-14 shrink-0 border-b border-gray-200 bg-[#F7F7F8]/95 backdrop-blur">
+      <header className="z-40 h-14 shrink-0 border-b border-gray-200 bg-[#F7F7F8]/95 backdrop-blur">
         <div className="mx-auto flex h-full max-w-[1520px] items-center justify-between gap-2 px-4 sm:px-6">
           <div className="flex min-w-0 items-center gap-2.5">
-            <span
-              className="h-2.5 w-2.5 shrink-0 rounded-full shadow-[0_0_0_3px_rgba(99,102,241,0.16)]"
-              style={{ background: company.accent_color || "#6366f1" }}
-            />
             <span className="truncate text-[15px] font-extrabold tracking-tight text-gray-950">
               {company.name}
-            </span>
-            <span className="hidden shrink-0 items-center rounded border border-gray-200 bg-white px-2 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.08em] text-gray-500 sm:inline-flex">
-              Approval room
             </span>
           </div>
 
@@ -260,26 +299,35 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
               </span>
             </div>
 
-            <div className="relative">
+            <div className="relative" ref={bellRef}>
               <button
                 type="button"
                 aria-label="Activity"
+                aria-expanded={bellOpen}
                 onClick={() => setBellOpen((v) => !v)}
                 className="relative flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 transition hover:bg-gray-50"
               >
                 <Bell className="h-4 w-4" />
-                {counts.posted > 0 && (
+                {unseenPosted.length > 0 && (
                   <span className="absolute -right-1 -top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-sky-500 px-1 text-[10px] font-bold text-white ring-2 ring-[#F7F7F8]">
-                    {counts.posted}
+                    {unseenPosted.length}
                   </span>
                 )}
               </button>
               {bellOpen && (
-                <div className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-24px)] rounded-2xl border border-gray-200 bg-white py-2 shadow-xl">
-                  <div className="border-b border-gray-100 px-4 py-2 text-xs font-bold text-gray-900">
-                    Your published posts
+                <div className="animate-platform-in absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-24px)] rounded-2xl border border-gray-200 bg-white py-2 shadow-xl">
+                  <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-2">
+                    <span className="text-xs font-bold text-gray-900">Approval Room Activity</span>
+                    <button
+                      type="button"
+                      onClick={markAllRead}
+                      disabled={unseenPosted.length === 0}
+                      className="text-[11px] font-semibold text-indigo-600 transition hover:text-indigo-700 disabled:opacity-40"
+                    >
+                      Mark all read
+                    </button>
                   </div>
-                  <div className="max-h-64 overflow-y-auto">
+                  <div className="max-h-64 overflow-y-auto overscroll-contain">
                     {postedItems.length === 0 ? (
                       <p className="px-4 py-6 text-center text-xs text-gray-400">
                         Nothing published yet.
@@ -293,7 +341,12 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
                           rel="noopener noreferrer"
                           className="flex items-start gap-2.5 px-4 py-2.5 transition hover:bg-gray-50"
                         >
-                          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sky-500" />
+                          <span
+                            className={cn(
+                              "mt-1.5 h-2 w-2 shrink-0 rounded-full",
+                              seenIds.includes(p.id) ? "bg-gray-300" : "bg-sky-500",
+                            )}
+                          />
                           <span className="min-w-0">
                             <span className="block truncate text-xs font-medium text-gray-800">
                               {p.caption ? p.caption.slice(0, 48) : `A ${p.post_type} went live`}
@@ -346,11 +399,11 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
       </div>
 
       {/* ---------- Workspace ---------- */}
-      <main className="mx-auto flex w-full max-w-[1520px] flex-1 flex-col overflow-hidden lg:flex-row">
-        {/* Left: device */}
+      <main className="mx-auto flex min-h-0 w-full max-w-[1520px] flex-1 flex-col overflow-hidden lg:flex-row">
+        {/* Left: device (fixed in place; the review pane scrolls) */}
         <section
           className={cn(
-            "flex w-full shrink-0 items-start justify-center overflow-y-auto bg-[#F7F7F8] px-3 py-5 lg:flex lg:w-[43%] lg:items-center lg:border-r lg:border-gray-200",
+            "min-h-0 w-full flex-1 shrink-0 items-center justify-center overflow-hidden bg-[#F7F7F8] px-3 py-2 lg:flex lg:flex-none lg:w-[43%] lg:border-r lg:border-gray-200",
             mobilePane === "phone" ? "flex" : "hidden",
           )}
         >
@@ -360,7 +413,7 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
         {/* Right: workspace */}
         <section
           className={cn(
-            "w-full flex-1 space-y-5 overflow-y-auto px-4 py-5 sm:px-7 lg:w-[57%]",
+            "min-h-0 w-full flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 py-5 sm:px-7 lg:w-[57%]",
             mobilePane === "review" ? "block" : "hidden lg:block",
           )}
         >
@@ -409,7 +462,7 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
                       setSelectedId(null);
                     }}
                     className={cn(
-                      "rounded-full px-4 py-1.5 text-[11.5px] font-bold uppercase tracking-wider transition",
+                      "rounded-full px-4 py-1.5 text-[11.5px] font-bold uppercase tracking-wider transition-all duration-300 active:scale-[0.97]",
                       active
                         ? "bg-[#111827] text-white shadow-sm"
                         : "font-semibold text-gray-600 hover:text-gray-900",
@@ -424,7 +477,10 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
 
           {/* Studio card */}
           {selected ? (
-            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <div
+              key={`studio-${platform}-${selected.id}`}
+              className="animate-platform-in overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+            >
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 bg-gray-50/70 px-5 py-3">
                 <div className="flex items-center gap-2">
                   <span className="rounded-md bg-gray-900 px-2 py-0.5 text-[11px] font-bold tracking-wide text-white">
@@ -440,13 +496,10 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
                 <div className="flex items-center gap-2">
                   <span
                     className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold",
+                      "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold",
                       STATUS[selected.status]?.pill,
                     )}
                   >
-                    <span
-                      className={cn("h-1.5 w-1.5 rounded-full", STATUS[selected.status]?.dot)}
-                    />
                     {STATUS[selected.status]?.label}
                   </span>
                   <div className="ml-1 flex items-center gap-1">
@@ -605,7 +658,10 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
           )}
 
           {/* Queue */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+          <div
+            key={`queue-${platform}-${filter}`}
+            className="animate-platform-in rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+          >
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <h3 className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
@@ -613,18 +669,13 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
                 </h3>
               </div>
               <div className="flex items-center gap-3 text-[11px] text-gray-500">
-                <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-sky-500" /> Posted
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" /> OK
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-amber-400" /> Pending
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-rose-500" /> Changes
-                </span>
+                <span>Posted</span>
+                <span className="text-gray-300">·</span>
+                <span>OK</span>
+                <span className="text-gray-300">·</span>
+                <span>Pending</span>
+                <span className="text-gray-300">·</span>
+                <span>Changes</span>
               </div>
             </div>
             {filtered.length === 0 ? (
@@ -650,12 +701,6 @@ export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, o
                     <span className="absolute left-1 top-1 rounded bg-black/60 px-1 text-[9px] font-bold text-white">
                       {i + 1}
                     </span>
-                    <span
-                      className={cn(
-                        "absolute bottom-1 left-1 h-2.5 w-2.5 rounded-full ring-2 ring-white",
-                        STATUS[p.status]?.dot,
-                      )}
-                    />
                   </button>
                 ))}
               </div>
