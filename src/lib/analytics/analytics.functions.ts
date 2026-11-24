@@ -20,7 +20,9 @@ export const getClientAnalytics = createServerFn({ method: "POST" })
         .eq("company_id", data.companyId),
       supabaseAdmin
         .from("social_accounts")
-        .select("id,platform,status,display_name,username,can_publish,external_account_id")
+        .select(
+          "id,platform,status,display_name,username,can_publish,external_account_id,connected_account_id",
+        )
         .eq("company_id", data.companyId),
       supabaseAdmin
         .from("publishing_jobs")
@@ -48,6 +50,32 @@ export const getClientAnalytics = createServerFn({ method: "POST" })
         };
     const publishedList = published ?? [];
 
+    // Live account stats (followers / post counts) where the platform exposes them.
+    const { getAccountStats } = await import("@/lib/publishing/composio.server");
+    const statEntries: Array<
+      [string, { followers: number | null; mediaCount: number | null } | null]
+    > = await Promise.all(
+      accountList.map(
+        async (
+          a,
+        ): Promise<[string, { followers: number | null; mediaCount: number | null } | null]> => {
+          if (a.status !== "connected") return [a.id, null];
+          const stats = await getAccountStats({
+            companyId: data.companyId,
+            platform: a.platform as (typeof PLATFORMS)[number],
+            connectedAccountId: a.connected_account_id,
+            externalAccountId: a.external_account_id,
+          });
+          return [
+            a.id,
+            stats ? { followers: stats.followers, mediaCount: stats.mediaCount } : null,
+          ];
+        },
+      ),
+    );
+    const statsById = new Map(statEntries);
+    const audience = statEntries.reduce((sum, [, s]) => sum + (s?.followers ?? 0), 0);
+
     const platforms = PLATFORMS.map((pf) => {
       const ps = postList.filter((p) => p.platform === pf);
       const js = jobList.filter((j) => j.platform === pf);
@@ -62,14 +90,19 @@ export const getClientAnalytics = createServerFn({ method: "POST" })
         publishedFromSite: js.filter((j) => j.status === "published").length,
         scheduled: js.filter((j) => j.status === "scheduled").length,
         failed: js.filter((j) => j.status === "failed" || j.status === "requires_attention").length,
-        accounts: accts.map((a) => ({
-          id: a.id,
-          name: a.display_name,
-          username: a.username,
-          status: a.status,
-          canPublish: a.can_publish,
-          selected: Boolean(a.external_account_id),
-        })),
+        accounts: accts.map((a) => {
+          const stats = statsById.get(a.id);
+          return {
+            id: a.id,
+            name: a.display_name,
+            username: a.username,
+            status: a.status,
+            canPublish: a.can_publish,
+            selected: Boolean(a.external_account_id),
+            followers: stats?.followers ?? null,
+            mediaCount: stats?.mediaCount ?? null,
+          };
+        }),
       };
     });
 
@@ -77,6 +110,15 @@ export const getClientAnalytics = createServerFn({ method: "POST" })
     const approvedOrPosted = postList.filter(
       (p) => p.status === "approved" || p.status === "posted",
     ).length;
+
+    const publishAttempted = jobList.filter(
+      (j) => j.status === "published" || j.status === "failed" || j.status === "requires_attention",
+    ).length;
+    const publishSuccessRate = publishAttempted
+      ? Math.round(
+          (jobList.filter((j) => j.status === "published").length / publishAttempted) * 100,
+        )
+      : 0;
 
     const recentPublished = publishedList
       .slice()
@@ -105,6 +147,8 @@ export const getClientAnalytics = createServerFn({ method: "POST" })
         failed: jobList.filter((j) => j.status === "failed" || j.status === "requires_attention")
           .length,
         approvalRate: decided ? Math.round((approvedOrPosted / decided) * 100) : 0,
+        audience,
+        publishSuccessRate,
       },
       platforms,
       recentPublished,

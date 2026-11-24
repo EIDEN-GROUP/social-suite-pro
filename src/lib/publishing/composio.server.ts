@@ -214,6 +214,85 @@ export async function listToolkitToolSlugs(toolkit: string): Promise<string[]> {
 
 export type Destination = { id: string; name: string };
 
+function numOrNull(v: unknown): number | null {
+  const n = typeof v === "string" ? Number(v) : typeof v === "number" ? v : NaN;
+  return Number.isFinite(n) ? n : null;
+}
+function strOrNull(v: unknown): string | null {
+  return typeof v === "string" && v ? v : null;
+}
+
+export type AccountStats = {
+  followers: number | null;
+  mediaCount: number | null;
+  username: string | null;
+  name: string | null;
+  avatarUrl: string | null;
+};
+
+/**
+ * Fetches account-level stats (followers / post count) from the provider.
+ * Only Instagram and Facebook expose these reliably; other platforms return null.
+ */
+export async function getAccountStats(params: {
+  companyId: string;
+  platform: Platform;
+  connectedAccountId: string;
+  externalAccountId: string | null;
+}): Promise<AccountStats | null> {
+  try {
+    if (params.platform === "instagram") {
+      const r = await executeTool({
+        slug: "INSTAGRAM_GET_USER_INFO",
+        companyId: params.companyId,
+        connectedAccountId: params.connectedAccountId,
+        // Followers/counts are only returned for the authenticated profile ("me").
+        arguments: {
+          ig_user_id: "me",
+          fields: "id,username,name,followers_count,media_count,profile_picture_url",
+        },
+        toolkit: "instagram",
+      });
+      if (!r.successful || !r.data) return null;
+      const d = r.data as Record<string, unknown>;
+      return {
+        followers: numOrNull(d.followers_count),
+        mediaCount: numOrNull(d.media_count),
+        username: strOrNull(d.username),
+        name: strOrNull(d.name),
+        avatarUrl: strOrNull(d.profile_picture_url),
+      };
+    }
+
+    if (params.platform === "facebook") {
+      if (!params.externalAccountId) return null;
+      const r = await executeTool({
+        slug: "FACEBOOK_GET_PAGE_DETAILS",
+        companyId: params.companyId,
+        connectedAccountId: params.connectedAccountId,
+        arguments: {
+          page_id: params.externalAccountId,
+          fields: "id,name,username,fan_count,followers_count,picture",
+        },
+        toolkit: "facebook",
+      });
+      if (!r.successful || !r.data) return null;
+      const d = r.data as Record<string, unknown>;
+      return {
+        followers: numOrNull(d.followers_count ?? d.fan_count),
+        mediaCount: null,
+        username: strOrNull(d.username),
+        name: strOrNull(d.name),
+        avatarUrl: null,
+      };
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 /** Recursively collect {id,name} pairs from a provider response of unknown shape. */
 function extractDestinations(value: unknown): Destination[] {
   const out: Destination[] = [];

@@ -17,7 +17,9 @@ import {
   CheckCircle2,
   Clock,
   ExternalLink,
+  Send,
   UploadCloud,
+  Users,
 } from "lucide-react";
 import type { Company, Platform } from "@/lib/types";
 import { getClientAnalytics } from "@/lib/analytics/analytics.functions";
@@ -60,7 +62,7 @@ export function ClientAnalytics({ company }: { company: Company }) {
   return (
     <div className="space-y-6">
       {/* Stat cards */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Stat
           icon={UploadCloud}
           label="Content pieces"
@@ -81,6 +83,19 @@ export function ClientAnalytics({ company }: { company: Company }) {
           value={totals.publishedFromSite}
           tone="sky"
           hint={totals.scheduled > 0 ? `${totals.scheduled} scheduled` : undefined}
+        />
+        <Stat
+          icon={Users}
+          label="Audience"
+          value={formatNum(totals.audience)}
+          hint="followers, where available"
+        />
+        <Stat
+          icon={Send}
+          label="Publish success"
+          value={`${totals.publishSuccessRate}%`}
+          tone="emerald"
+          hint={totals.failed > 0 ? `${totals.failed} need attention` : "no failures"}
         />
       </div>
 
@@ -143,14 +158,22 @@ export function ClientAnalytics({ company }: { company: Company }) {
                       {p.accounts.length === 0 ? (
                         <span className="text-xs text-muted-foreground">Not connected</span>
                       ) : (
-                        <div className="flex flex-col gap-1.5">
+                        <div className="flex flex-col gap-2">
                           {p.accounts.map((a) => (
-                            <span key={a.id} className="flex items-center gap-2 text-xs">
-                              <span className="max-w-[10rem] truncate">
-                                {a.name}
-                                {a.username ? ` (@${a.username})` : ""}
+                            <span key={a.id} className="flex flex-col gap-0.5 text-xs">
+                              <span className="flex items-center gap-2">
+                                <span className="max-w-[10rem] truncate">
+                                  {a.name}
+                                  {a.username ? ` (@${a.username})` : ""}
+                                </span>
+                                <AccountStatusBadge status={a.status} />
                               </span>
-                              <AccountStatusBadge status={a.status} />
+                              {a.followers != null && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  {formatNum(a.followers)} followers
+                                  {a.mediaCount != null ? ` · ${a.mediaCount} posts` : ""}
+                                </span>
+                              )}
                             </span>
                           ))}
                         </div>
@@ -273,4 +296,11 @@ function Num({
       </span>
     </td>
   );
+}
+
+function formatNum(n: number): string {
+  if (!Number.isFinite(n)) return "0";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}k`;
+  return String(n);
 }
