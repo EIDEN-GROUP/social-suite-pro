@@ -8,7 +8,9 @@ import {
   getClientWorkspace,
   clientDecide,
   getCompanyBranding,
+  getClientSnapshot,
   type CompanyBranding,
+  type ClientSnapshot,
 } from "@/lib/client.functions";
 import { Media } from "@/components/Media";
 import { ApprovalRoom } from "@/components/client/ApprovalRoom";
@@ -62,6 +64,7 @@ function ClientRoom() {
   const loadWorkspace = useServerFn(getClientWorkspace);
   const decide = useServerFn(clientDecide);
   const loadBranding = useServerFn(getCompanyBranding);
+  const loadSnapshot = useServerFn(getClientSnapshot);
 
   const [authed, setAuthed] = useState(false);
   const [pw, setPw] = useState("");
@@ -71,6 +74,7 @@ function ClientRoom() {
   const [branding, setBranding] = useState<CompanyBranding | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [highlights, setHighlights] = useState<Highlight[]>([]);
+  const [snapshot, setSnapshot] = useState<ClientSnapshot | null>(null);
 
   const storageKey = `atelier_pw:${slug}`;
 
@@ -101,6 +105,19 @@ function ClientRoom() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
+  // Light insights snapshot (followers / totals) once the client is signed in.
+  useEffect(() => {
+    if (!authed || !company || !pw) return;
+    let alive = true;
+    loadSnapshot({ data: { slug, password: pw } })
+      .then((s) => alive && setSnapshot(s))
+      .catch(() => alive && setSnapshot(null));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed, company?.id]);
+
   async function refresh() {
     if (!pw) return;
     try {
@@ -130,6 +147,7 @@ function ClientRoom() {
     setAuthed(false);
     setCompany(null);
     setPw("");
+    setSnapshot(null);
   }
 
   if (loading)
@@ -160,6 +178,7 @@ function ClientRoom() {
       company={company}
       posts={posts}
       highlights={highlights}
+      snapshot={snapshot}
       onLogout={logout}
       onDecide={async (post, status, comment) => {
         await decide({ data: { slug, password: pw, postId: post.id, status, comment } });

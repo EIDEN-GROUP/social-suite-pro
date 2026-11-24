@@ -88,6 +88,93 @@ export const getClientWorkspace = createServerFn({ method: "POST" })
     };
   });
 
+export type ClientSnapshot = {
+  followers: number | null;
+  posts: number;
+  published: number;
+  handles: Array<{ platform: string; username: string | null; followers: number | null }>;
+};
+
+const SNAPSHOT_TTL_MS = 5 * 60_000;
+const snapshotCache = new Map<string, { at: number; value: ClientSnapshot }>();
+
+/**
+ * A light insights snapshot for the client approval room header: live follower
+ * counts for connected Instagram / Facebook / LinkedIn (company page) accounts,
+ * plus content totals. Cached per company for a few minutes so approving posts
+ * doesn't hammer the provider APIs.
+ */
+export const getClientSnapshot = createServerFn({ method: "POST" })
+  .inputValidator((input) =>
+    z
+      .object({
+        slug: z.string().min(1).max(80),
+        password: z.string().min(1).max(255),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data }): Promise<ClientSnapshot> => {
+    const { supabaseAdmin, company } = await authCompany(data.slug, data.password);
+    if (!company) throw new Error("Session expired. Please sign in again.");
+
+    const cached = snapshotCache.get(company.id);
+    if (cached && Date.now() - cached.at < SNAPSHOT_TTL_MS) return cached.value;
+
+    const [{ data: posts }, { data: accounts }] = await Promise.all([
+      supabaseAdmin.from("posts").select("status").eq("company_id", company.id),
+      supabaseAdmin
+        .from("social_accounts")
+        .select("platform,status,username,connected_account_id,external_account_id")
+        .eq("company_id", company.id)
+        .eq("status", "connected"),
+    ]);
+
+    const postRows = (posts ?? []) as { status: string }[];
+    const connected = (accounts ?? []) as Array<{
+      platform: string;
+      username: string | null;
+      connected_account_id: string;
+      external_account_id: string | null;
+    }>;
+
+    const handles: ClientSnapshot["handles"] = [];
+    let followerTotal = 0;
+    let hasFollowers = false;
+
+    try {
+      const { getAccountStats } = await import("@/lib/publishing/composio.server");
+      for (const a of connected) {
+        if (!["instagram", "facebook", "linkedin"].includes(a.platform)) continue;
+        const stats = await getAccountStats({
+          companyId: company.id,
+          platform: a.platform as "instagram" | "facebook" | "linkedin",
+          connectedAccountId: a.connected_account_id,
+          externalAccountId: a.external_account_id,
+        });
+        handles.push({
+          platform: a.platform,
+          username: a.username ?? stats?.username ?? null,
+          followers: stats?.followers ?? null,
+        });
+        if (stats?.followers != null) {
+          followerTotal += stats.followers;
+          hasFollowers = true;
+        }
+      }
+    } catch {
+      /* provider unavailable - still return content totals */
+    }
+
+    const value: ClientSnapshot = {
+      followers: hasFollowers ? followerTotal : null,
+      posts: postRows.length,
+      published: postRows.filter((p) => p.status === "posted").length,
+      handles,
+    };
+    snapshotCache.set(company.id, { at: Date.now(), value });
+    return value;
+  });
+
 export const clientDecide = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z

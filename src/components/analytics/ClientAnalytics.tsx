@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -30,24 +32,25 @@ export function ClientAnalytics({ company }: { company: Company }) {
   const load = useServerFn(getClientAnalytics);
   const [data, setData] = useState<Awaited<ReturnType<typeof load>> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [range, setRange] = useState<"7d" | "30d" | "all">("all");
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    load({ data: { companyId: company.id } })
+    load({ data: { companyId: company.id, range } })
       .then((res) => alive && setData(res))
       .catch((err) => toast.error((err as Error).message))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
     };
-  }, [company.id, load]);
+  }, [company.id, load, range]);
 
   if (loading)
     return <p className="py-16 text-center text-sm text-muted-foreground">Loading analytics…</p>;
   if (!data) return <p className="py-16 text-center text-sm text-muted-foreground">No data.</p>;
 
-  const { totals, platforms, recentPublished } = data;
+  const { totals, platforms, recentPublished, timeSeries } = data;
 
   const chartData = platforms.map((p) => ({
     name: p.platform === "twitter" ? "X" : p.platform[0].toUpperCase() + p.platform.slice(1),
@@ -61,6 +64,26 @@ export function ClientAnalytics({ company }: { company: Company }) {
 
   return (
     <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs uppercase tracking-widest text-muted-foreground">Performance</p>
+        <div className="flex border editorial-rule">
+          {(["7d", "30d", "all"] as const).map((r) => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => setRange(r)}
+              className={`px-3 py-1.5 text-[11px] uppercase tracking-widest ${
+                range === r
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {r === "all" ? "All time" : r}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Stat cards */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Stat
@@ -131,6 +154,58 @@ export function ClientAnalytics({ company }: { company: Company }) {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+          </div>
+
+          {/* Content created vs published */}
+          <div className="rounded border editorial-rule p-5">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">
+              Content created vs published over time
+            </p>
+            {timeSeries.length === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">No activity in this range.</p>
+            ) : (
+              <div className="mt-4 h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={timeSeries} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="gCreated" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.35} />
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="gPublished" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.35} />
+                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="rgba(0,0,0,0.06)"
+                      vertical={false}
+                    />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
+                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12 }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Area
+                      type="monotone"
+                      dataKey="Created"
+                      stroke="#6366f1"
+                      fill="url(#gCreated)"
+                      strokeWidth={2}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="Published"
+                      stroke="#0ea5e9"
+                      fill="url(#gPublished)"
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
 
           {/* Per-platform table */}
@@ -222,6 +297,22 @@ export function ClientAnalytics({ company }: { company: Company }) {
                           ? `${formatPostedAt(r.publishedAt)} · ${postedAgo(r.publishedAt)}`
                           : ""}
                       </p>
+                      {r.engagement && (
+                        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[10.5px] text-muted-foreground">
+                          {r.engagement.likes != null && (
+                            <span>♥ {formatNum(r.engagement.likes)} likes</span>
+                          )}
+                          {r.engagement.comments != null && (
+                            <span>💬 {formatNum(r.engagement.comments)}</span>
+                          )}
+                          {r.engagement.reach != null && (
+                            <span>Reach {formatNum(r.engagement.reach)}</span>
+                          )}
+                          {r.engagement.impressions != null && (
+                            <span>Impressions {formatNum(r.engagement.impressions)}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                     {r.url && (
                       <a

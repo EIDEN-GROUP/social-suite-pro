@@ -107,7 +107,30 @@ export function destinationRequired(platform: Platform): boolean {
 
 /** Platforms where the team must pick from multiple destinations (picker UI). */
 export function destinationPickerRequired(platform: Platform): boolean {
-  return platform === "facebook" || platform === "instagram";
+  // LinkedIn is included so the team can switch between posting as a person or
+  // as a company page (organization URN).
+  return platform === "facebook" || platform === "instagram" || platform === "linkedin";
+}
+
+/**
+ * Normalizes whatever the team types for a LinkedIn author into a URN.
+ *  - `urn:li:organization:123` → company page
+ *  - `urn:li:person:abc`       → personal profile
+ *  - `123`                     → company page (numeric ids are organization ids)
+ *  - `abc`                     → personal profile
+ */
+export function normalizeLinkedInAuthor(value: string): { urn: string; isOrg: boolean } {
+  const v = value.trim();
+  if (/^urn:li:organization:\d+$/i.test(v)) return { urn: v, isOrg: true };
+  if (/^urn:li:person:[A-Za-z0-9_-]+$/i.test(v)) return { urn: v, isOrg: false };
+  if (/^urn:li:[a-z]+:/i.test(v)) return { urn: v, isOrg: /organization/i.test(v) };
+  if (/^\d+$/.test(v)) return { urn: `urn:li:organization:${v}`, isOrg: true };
+  return { urn: `urn:li:person:${v}`, isOrg: false };
+}
+
+/** True when the stored LinkedIn destination posts as a company page. */
+export function isLinkedInOrgDestination(externalAccountId: string | null): boolean {
+  return Boolean(externalAccountId && /^urn:li:organization:/i.test(externalAccountId));
 }
 
 /**

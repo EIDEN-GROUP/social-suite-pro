@@ -306,7 +306,7 @@ export const listSocialDestinations = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await (await import("@/lib/server-auth.server")).requireSuperadmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { listFacebookPages, getInstagramAccount } =
+    const { listFacebookPages, getInstagramAccount, getLinkedInAuthor, listLinkedInOrganizations } =
       await import("@/lib/publishing/composio.server");
 
     const { data: account } = await supabaseAdmin
@@ -323,6 +323,24 @@ export const listSocialDestinations = createServerFn({ method: "POST" })
     if (account.platform === "instagram") {
       const ig = await getInstagramAccount(account.company_id, account.connected_account_id);
       return { destinations: ig ? [ig] : [], selected: account.external_account_id };
+    }
+    if (account.platform === "linkedin") {
+      const author = await getLinkedInAuthor(account.company_id, account.connected_account_id);
+      const destinations: { id: string; name: string }[] = author
+        ? [{ id: author.urn, name: `${author.name} (personal profile)` }]
+        : [];
+      const orgs = await listLinkedInOrganizations(
+        account.company_id,
+        account.connected_account_id,
+      );
+      for (const o of orgs) destinations.push({ id: o.id, name: `${o.name} (company page)` });
+      return {
+        destinations,
+        selected: account.external_account_id,
+        manual: true,
+        manualHint:
+          "Paste a company page id (e.g. 2414183) or URN (urn:li:organization:2414183) to post as the company page.",
+      };
     }
     return { destinations: [], selected: account.external_account_id };
   });
@@ -351,14 +369,19 @@ export const setSocialDestination = createServerFn({ method: "POST" })
     if (!account) throw new Error("Account not found.");
 
     const capabilities = (account.capabilities as string[]) ?? [];
+    const { normalizeLinkedInAuthor } = await import("@/lib/publishing/platforms");
+    const destinationId =
+      account.platform === "linkedin"
+        ? normalizeLinkedInAuthor(data.destinationId).urn
+        : data.destinationId;
     const canPublish =
       canPublishFor(account.platform as Platform, capabilities) &&
-      (!destinationRequired(account.platform as Platform) || Boolean(data.destinationId));
+      (!destinationRequired(account.platform as Platform) || Boolean(destinationId));
 
     await supabaseAdmin
       .from("social_accounts")
       .update({
-        external_account_id: data.destinationId,
+        external_account_id: destinationId,
         display_name: data.destinationName ?? account.display_name,
         can_publish: canPublish,
         last_error: null,

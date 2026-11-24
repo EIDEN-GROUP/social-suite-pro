@@ -2,13 +2,21 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const PLATFORMS = ["instagram", "tiktok", "facebook", "twitter", "linkedin"] as const;
+type PlatformT = (typeof PLATFORMS)[number];
 
 /**
  * Per-client analytics: content the client has across platforms plus everything
- * the studio published from the site.
+ * the studio published from the site, with a selectable time range.
  */
 export const getClientAnalytics = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ companyId: z.string().uuid() }).parse(input))
+  .inputValidator((input) =>
+    z
+      .object({
+        companyId: z.string().uuid(),
+        range: z.enum(["7d", "30d", "all"]).optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data }) => {
     await (await import("@/lib/server-auth.server")).requireSuperadmin();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -16,7 +24,7 @@ export const getClientAnalytics = createServerFn({ method: "POST" })
     const [{ data: posts }, { data: accounts }, { data: jobs }] = await Promise.all([
       supabaseAdmin
         .from("posts")
-        .select("id,platform,post_type,status,posted_at,post_url,caption")
+        .select("id,platform,post_type,status,posted_at,post_url,caption,created_at")
         .eq("company_id", data.companyId),
       supabaseAdmin
         .from("social_accounts")
@@ -30,15 +38,25 @@ export const getClientAnalytics = createServerFn({ method: "POST" })
         .eq("company_id", data.companyId),
     ]);
 
-    const postList = posts ?? [];
+    const range = data.range ?? "all";
+    const cutoff =
+      range === "7d"
+        ? Date.now() - 7 * 86_400_000
+        : range === "30d"
+          ? Date.now() - 30 * 86_400_000
+          : null;
+    const inRange = (iso: string | null | undefined) =>
+      cutoff == null || !iso ? true : new Date(iso).getTime() >= cutoff;
+
     const accountList = accounts ?? [];
-    const jobList = jobs ?? [];
+    const postList = (posts ?? []).filter((p) => inRange(p.created_at));
+    const jobList = (jobs ?? []).filter((j) => inRange(j.created_at));
 
     const postIds = postList.map((p) => p.id);
     const { data: published } = postIds.length
       ? await supabaseAdmin
           .from("published_posts")
-          .select("post_id,platform,external_url,published_at")
+          .select("post_id,platform,external_url,published_at,external_post_id")
           .in("post_id", postIds)
       : {
           data: [] as {
@@ -46,12 +64,14 @@ export const getClientAnalytics = createServerFn({ method: "POST" })
             platform: string;
             external_url: string | null;
             published_at: string;
+            external_post_id: string | null;
           }[],
         };
-    const publishedList = published ?? [];
+    const publishedList = (published ?? []).filter((p) => inRange(p.published_at));
+
+    const { getAccountStats, getPostEngagement } = await import("@/lib/publishing/composio.server");
 
     // Live account stats (followers / post counts) where the platform exposes them.
-    const { getAccountStats } = await import("@/lib/publishing/composio.server");
     const statEntries: Array<
       [string, { followers: number | null; mediaCount: number | null } | null]
     > = await Promise.all(
@@ -62,7 +82,7 @@ export const getClientAnalytics = createServerFn({ method: "POST" })
           if (a.status !== "connected") return [a.id, null];
           const stats = await getAccountStats({
             companyId: data.companyId,
-            platform: a.platform as (typeof PLATFORMS)[number],
+            platform: a.platform as PlatformT,
             connectedAccountId: a.connected_account_id,
             externalAccountId: a.external_account_id,
           });
@@ -120,22 +140,85 @@ export const getClientAnalytics = createServerFn({ method: "POST" })
         )
       : 0;
 
-    const recentPublished = publishedList
+    // ---- Time series (created vs published) ----
+    const byMonth = range === "all";
+    const bucketMap = new Map<
+      string,
+      { key: string; label: string; Created: number; Published: number }
+    >();
+    const bucket = (iso: string) => {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return null;
+      const key = byMonth
+        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`
+        : d.toISOString().slice(0, 10);
+      let b = bucketMap.get(key);
+      if (!b) {
+        const label = byMonth
+          ? d.toLocaleDateString(undefined, { month: "short", year: "2-digit" })
+          : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+        b = { key, label, Created: 0, Published: 0 };
+        bucketMap.set(key, b);
+      }
+      return b;
+    };
+    for (const p of postList) {
+      if (p.created_at) {
+        const b = bucket(p.created_at);
+        if (b) b.Created += 1;
+      }
+    }
+    for (const pp of publishedList) {
+      if (pp.published_at) {
+        const b = bucket(pp.published_at);
+        if (b) b.Published += 1;
+      }
+    }
+    const timeSeries = [...bucketMap.values()]
+      .sort((a, b) => a.key.localeCompare(b.key))
+      .map(({ label, Created, Published }) => ({ label, Created, Published }));
+
+    // ---- Recently published + engagement ----
+    const accountByPlatform = new Map<string, (typeof accountList)[number]>();
+    for (const a of accountList)
+      if (!accountByPlatform.has(a.platform)) accountByPlatform.set(a.platform, a);
+
+    const recentBase = publishedList
       .slice()
       .sort((a, b) => (b.published_at ?? "").localeCompare(a.published_at ?? ""))
-      .slice(0, 8)
-      .map((pp) => {
+      .slice(0, 6);
+
+    const recentPublished = await Promise.all(
+      recentBase.map(async (pp) => {
         const post = postList.find((p) => p.id === pp.post_id);
+        let engagement: Awaited<ReturnType<typeof getPostEngagement>> = null;
+        const acct = accountByPlatform.get(pp.platform);
+        if (
+          acct &&
+          acct.status === "connected" &&
+          pp.external_post_id &&
+          (pp.platform === "instagram" || pp.platform === "facebook")
+        ) {
+          engagement = await getPostEngagement({
+            companyId: data.companyId,
+            platform: pp.platform as PlatformT,
+            connectedAccountId: acct.connected_account_id,
+            externalPostId: pp.external_post_id,
+          });
+        }
         return {
           postId: pp.post_id,
           platform: pp.platform,
           url: pp.external_url,
           publishedAt: pp.published_at,
           caption: post?.caption ?? null,
+          engagement,
         };
-      });
+      }),
+    );
 
     return {
+      range,
       totals: {
         posts: postList.length,
         pending: postList.filter((p) => p.status === "pending").length,
@@ -151,6 +234,7 @@ export const getClientAnalytics = createServerFn({ method: "POST" })
         publishSuccessRate,
       },
       platforms,
+      timeSeries,
       recentPublished,
     };
   });

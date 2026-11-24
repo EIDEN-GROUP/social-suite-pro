@@ -24,6 +24,9 @@ import { ClientAnalytics } from "@/components/analytics/ClientAnalytics";
 import { Trash2, Play, Images, CalendarDays, Rocket } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/companies/$slug")({
+  validateSearch: (search: Record<string, unknown>): { tab?: "analytics" } => ({
+    tab: search.tab === "analytics" ? "analytics" : undefined,
+  }),
   component: CompanyAdmin,
 });
 
@@ -50,6 +53,7 @@ function inGroup(p: Post, g: ViewGroup): boolean {
 
 function CompanyAdmin() {
   const { slug } = Route.useParams();
+  const search = Route.useSearch();
   const navigate = useNavigate();
   const [company, setCompany] = useState<Company | null>(null);
   const [platform, setPlatform] = useState<Platform>("instagram");
@@ -64,7 +68,9 @@ function CompanyAdmin() {
   const [picBusy, setPicBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
-  const [tab, setTab] = useState<"content" | "analytics">("content");
+  const [tab, setTab] = useState<"content" | "analytics">(
+    search.tab === "analytics" ? "analytics" : "content",
+  );
 
   const loadPosts = useCallback(async (companyId: string, pf: Platform) => {
     const { data: ps } = await supabase

@@ -11,9 +11,11 @@ import {
   Lock,
   Pencil,
   Send,
+  Users,
   X,
 } from "lucide-react";
 import type { Company, Highlight, Platform, Post } from "@/lib/types";
+import type { ClientSnapshot } from "@/lib/client.functions";
 import { PLATFORMS } from "@/lib/types";
 import { PhonePreview } from "@/components/PhonePreview";
 import { Media } from "@/components/Media";
@@ -55,11 +57,19 @@ interface Props {
   company: Company;
   posts: Post[];
   highlights: Highlight[];
+  snapshot?: ClientSnapshot | null;
   onDecide: (post: Post, status: "approved" | "rejected", comment: string) => Promise<void>;
   onLogout: () => void;
 }
 
-export function ApprovalRoom({ company, posts, highlights, onDecide, onLogout }: Props) {
+function formatCount(n: number): string {
+  if (!Number.isFinite(n)) return "0";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}k`;
+  return String(n);
+}
+
+export function ApprovalRoom({ company, posts, highlights, snapshot, onDecide, onLogout }: Props) {
   const [platform, setPlatform] = useState<Platform>("instagram");
   const [filter, setFilter] = useState<Filter>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -195,6 +205,43 @@ export function ApprovalRoom({ company, posts, highlights, onDecide, onLogout }:
           </div>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            {snapshot && (snapshot.followers != null || snapshot.posts > 0) && (
+              <div
+                className="hidden items-center gap-2 rounded-full border border-gray-200 bg-white px-3.5 py-1 text-[12.5px] font-medium text-gray-500 lg:flex"
+                title={
+                  snapshot.handles.length
+                    ? snapshot.handles
+                        .map(
+                          (h) =>
+                            `${h.platform}${h.username ? ` @${h.username}` : ""}${
+                              h.followers != null ? ` · ${formatCount(h.followers)}` : ""
+                            }`,
+                        )
+                        .join("\n")
+                    : undefined
+                }
+              >
+                <Users className="h-3.5 w-3.5 text-gray-400" />
+                {snapshot.followers != null ? (
+                  <span>
+                    <strong className="font-bold text-gray-900">
+                      {formatCount(snapshot.followers)}
+                    </strong>{" "}
+                    followers
+                  </span>
+                ) : (
+                  <span className="text-gray-400">Audience</span>
+                )}
+                <span className="text-gray-300">·</span>
+                <span>
+                  <strong className="font-bold text-gray-900">{snapshot.posts}</strong> pieces
+                </span>
+                <span className="text-gray-300">·</span>
+                <span>
+                  <strong className="font-bold text-sky-600">{snapshot.published}</strong> live
+                </span>
+              </div>
+            )}
             <div className="hidden items-center gap-2 rounded-full border border-gray-200 bg-white px-3.5 py-1 text-[12.5px] font-medium text-gray-500 md:flex">
               <span>
                 <strong className="font-bold text-gray-900">{counts.pending}</strong> pending

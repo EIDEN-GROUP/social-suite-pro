@@ -287,6 +287,30 @@ export async function getAccountStats(params: {
       };
     }
 
+    if (params.platform === "linkedin") {
+      // Only company pages expose follower stats; personal profiles don't.
+      const urn = params.externalAccountId;
+      if (!urn || !/^urn:li:organization:/i.test(urn)) return null;
+      const r = await executeTool({
+        slug: "LINKEDIN_GET_ORG_PAGE_STATS",
+        companyId: params.companyId,
+        connectedAccountId: params.connectedAccountId,
+        arguments: { organization: urn, timeGranularityType: "DAY" },
+        toolkit: "linkedin",
+      });
+      if (!r.successful || !r.data) return null;
+      return {
+        followers:
+          deepFindNumber(r.data, "followerCount") ??
+          deepFindNumber(r.data, "followersCount") ??
+          deepFindNumber(r.data, "totalFollowerCount"),
+        mediaCount: null,
+        username: null,
+        name: null,
+        avatarUrl: null,
+      };
+    }
+
     return null;
   } catch {
     return null;
@@ -321,6 +345,52 @@ function extractDestinations(value: unknown): Destination[] {
   };
   visit(value);
   return out;
+}
+
+/** Lists the LinkedIn company pages the member administers (best effort). */
+export async function listLinkedInOrganizations(
+  _companyId: string,
+  connectedAccountId: string,
+): Promise<Destination[]> {
+  try {
+    // LinkedIn's org ACL endpoint returns the pages this member administers.
+    // Requires r_organization_admin; when the token lacks it we return [] and
+    // the team can enter the organization id manually instead.
+    const res = (await composio().tools.proxyExecute({
+      endpoint:
+        "organizationalEntityAcls?q=roleAssignee&role=ADMINISTRATOR&projection=(elements*(organizationalTarget~(id,localizedName,vanityName)))",
+      method: "GET",
+      connectedAccountId,
+    })) as { data?: unknown };
+    const out: Destination[] = [];
+    const seen = new Set<string>();
+    const walk = (v: unknown) => {
+      if (!v) return;
+      if (Array.isArray(v)) {
+        for (const item of v) walk(item);
+        return;
+      }
+      if (typeof v !== "object") return;
+      const rec = v as Record<string, unknown>;
+      const target = (rec.organizationalTarget ?? rec) as Record<string, unknown>;
+      const id = target.id;
+      if ((typeof id === "string" || typeof id === "number") && String(id)) {
+        const urn = String(id).startsWith("urn:") ? String(id) : `urn:li:organization:${id}`;
+        if (!seen.has(urn)) {
+          seen.add(urn);
+          out.push({
+            id: urn,
+            name: String(target.localizedName ?? target.vanityName ?? urn),
+          });
+        }
+      }
+      for (const val of Object.values(rec)) walk(val);
+    };
+    walk(res.data);
+    return out;
+  } catch {
+    return [];
+  }
 }
 
 /** Lists the Facebook Pages the connected account manages. */
@@ -427,6 +497,107 @@ export async function uploadMedia(
 // ---------------------------------------------------------------------------
 
 export type ToolResult = { successful: boolean; data: unknown; error: string | null };
+
+export type PostEngagement = {
+  likes: number | null;
+  comments: number | null;
+  reach: number | null;
+  impressions: number | null;
+};
+
+/** Recursively finds a numeric metric by name in a provider response. */
+function deepFindNumber(value: unknown, key: string): number | null {
+  if (value == null) return null;
+  if (Array.isArray(value)) {
+    for (const v of value) {
+      const f = deepFindNumber(v, key);
+      if (f != null) return f;
+    }
+    return null;
+  }
+  if (typeof value === "object") {
+    const rec = value as Record<string, unknown>;
+    if (key in rec) {
+      const n = numOrNull(rec[key]);
+      if (n != null) return n;
+    }
+    if (rec.name === key && Array.isArray(rec.values)) {
+      const v0 = rec.values[0] as Record<string, unknown> | undefined;
+      if (v0) {
+        const n = numOrNull(v0.value);
+        if (n != null) return n;
+      }
+    }
+    for (const v of Object.values(rec)) {
+      const f = deepFindNumber(v, key);
+      if (f != null) return f;
+    }
+  }
+  return null;
+}
+
+/** Fetches per-post engagement (likes/reach/impressions) for IG or Facebook. */
+export async function getPostEngagement(params: {
+  companyId: string;
+  platform: Platform;
+  connectedAccountId: string;
+  externalPostId: string;
+}): Promise<PostEngagement | null> {
+  try {
+    if (params.platform === "instagram") {
+      const media = await executeTool({
+        slug: "INSTAGRAM_GET_IG_MEDIA",
+        companyId: params.companyId,
+        connectedAccountId: params.connectedAccountId,
+        arguments: { ig_media_id: params.externalPostId, fields: "id,like_count,comments_count" },
+        toolkit: "instagram",
+      });
+      const d = (media.data ?? {}) as Record<string, unknown>;
+      let reach: number | null = null;
+      try {
+        const ins = await executeTool({
+          slug: "INSTAGRAM_GET_IG_MEDIA_INSIGHTS",
+          companyId: params.companyId,
+          connectedAccountId: params.connectedAccountId,
+          arguments: { ig_media_id: params.externalPostId, metric: ["reach"] },
+          toolkit: "instagram",
+        });
+        reach = deepFindNumber(ins.data, "reach");
+      } catch {
+        reach = null;
+      }
+      return {
+        likes: numOrNull(d.like_count),
+        comments: numOrNull(d.comments_count),
+        reach,
+        impressions: null,
+      };
+    }
+
+    if (params.platform === "facebook") {
+      const r = await executeTool({
+        slug: "FACEBOOK_GET_POST_INSIGHTS",
+        companyId: params.companyId,
+        connectedAccountId: params.connectedAccountId,
+        arguments: {
+          post_id: params.externalPostId,
+          metrics: "post_impressions,post_reactions_by_type_total",
+        },
+        toolkit: "facebook",
+      });
+      return {
+        likes: null,
+        comments: null,
+        reach: null,
+        impressions: deepFindNumber(r.data, "post_impressions"),
+      };
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export async function executeTool(params: {
   slug: string;

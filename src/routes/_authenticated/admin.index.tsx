@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CalendarDays, ExternalLink, LayoutGrid, List, Search } from "lucide-react";
+import { CalendarDays, ExternalLink, LayoutGrid, List, Search, BarChart3 } from "lucide-react";
 import type { Company, ApprovalStatus } from "@/lib/types";
 import { postedAgo } from "@/lib/posted";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -418,6 +418,14 @@ function CompanyCard({
         className="inline-flex items-center gap-1.5 rounded-sm border editorial-rule px-2.5 py-1.5 hover:bg-foreground/5"
       >
         <CalendarDays className="h-3.5 w-3.5" /> Calendar
+      </Link>
+      <Link
+        to="/admin/companies/$slug"
+        params={{ slug: c.slug }}
+        search={{ tab: "analytics" }}
+        className="inline-flex items-center gap-1.5 rounded-sm border editorial-rule px-2.5 py-1.5 hover:bg-foreground/5"
+      >
+        <BarChart3 className="h-3.5 w-3.5" /> Analytics
       </Link>
       <a
         href={`/c/${c.slug}`}
