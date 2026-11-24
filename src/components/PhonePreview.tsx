@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import type { Company, Post, Platform, Highlight } from "@/lib/types";
 import { Media } from "@/components/Media";
+import { cn } from "@/lib/utils";
 import {
   Heart,
   MessageCircle,
@@ -35,9 +36,17 @@ interface Props {
   posts: Post[];
   highlights?: Highlight[];
   onTap?: (post: Post) => void;
+  /** Override the frame width classes (defaults to max-w-[340px]). */
+  frameClassName?: string;
 }
 
-function PhoneFrame({ children }: { children: React.ReactNode }) {
+function PhoneFrame({
+  children,
+  className = "max-w-[340px]",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   const frameRef = useRef<HTMLDivElement>(null);
   const [shine, setShine] = useState({ x: 50, y: 50 });
 
@@ -57,7 +66,7 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
   return (
     <div
       ref={frameRef}
-      className="relative mx-auto w-full max-w-[340px]"
+      className={cn("relative mx-auto w-full", className)}
       style={{
         filter:
           "drop-shadow(0 30px 60px rgba(0,0,0,0.3)) drop-shadow(0 10px 20px rgba(0,0,0,0.15))",
@@ -114,10 +123,17 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function PhonePreview({ platform, company, posts, highlights = [], onTap }: Props) {
+export function PhonePreview({
+  platform,
+  company,
+  posts,
+  highlights = [],
+  onTap,
+  frameClassName,
+}: Props) {
   const [lightbox, setLightbox] = useState<Highlight | null>(null);
   return (
-    <PhoneFrame>
+    <PhoneFrame className={frameClassName}>
       {platform === "instagram" && (
         <Instagram
           company={company}

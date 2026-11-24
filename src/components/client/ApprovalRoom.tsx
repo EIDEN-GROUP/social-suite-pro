@@ -152,17 +152,23 @@ export function ApprovalRoom({ company, posts, highlights, onDecide, onLogout }:
   }
 
   const phone = (
-    <div className="flex flex-col items-center gap-3">
-      <PhonePreview
-        platform={platform}
-        company={company}
-        posts={platformPosts}
-        highlights={highlights}
-        onTap={(p) => {
-          setSelectedId(p.id);
-          setSheetOpen(true);
-        }}
-      />
+    <div className="flex w-full flex-col items-center gap-3">
+      <div
+        className="mx-auto w-full"
+        style={{ maxWidth: "min(440px, calc((100dvh - 110px) * 0.4615 + 24px))" }}
+      >
+        <PhonePreview
+          platform={platform}
+          company={company}
+          posts={platformPosts}
+          highlights={highlights}
+          onTap={(p) => {
+            setSelectedId(p.id);
+            setSheetOpen(true);
+          }}
+          frameClassName="max-w-none"
+        />
+      </div>
       <p className="flex items-center gap-1.5 text-[11px] font-medium text-ink-soft/70">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
         Live preview · tap any tile to review
@@ -297,7 +303,7 @@ export function ApprovalRoom({ company, posts, highlights, onDecide, onLogout }:
         {/* Left: device */}
         <section
           className={cn(
-            "w-full shrink-0 items-start justify-center overflow-y-auto bg-[#F7F7F8] px-3 py-5 lg:flex lg:w-[43%] lg:border-r lg:border-gray-200",
+            "flex w-full shrink-0 items-start justify-center overflow-y-auto bg-[#F7F7F8] px-3 py-5 lg:flex lg:w-[43%] lg:items-center lg:border-r lg:border-gray-200",
             mobilePane === "phone" ? "flex" : "hidden",
           )}
         >
