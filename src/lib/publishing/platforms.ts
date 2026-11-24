@@ -223,11 +223,17 @@ export function buildPublishPlan(params: {
       caption,
       ...(isVideo ? { video_url: media } : { image_url: media }),
     };
+    // Instagram Stories need an explicit media_type.
+    if (post.post_type === "story") containerArgs.media_type = "STORIES";
     // Two-step: create the container, then publish it. `creation_id` is filled
-    // in by the engine from the container response.
+    // in by the engine from the container response. BOTH actions require the
+    // ig_user_id.
     return [
       { slug: container, args: containerArgs },
-      { slug: publish, args: { creation_id: "{{creation_id}}" } },
+      {
+        slug: publish,
+        args: { ig_user_id: account.externalAccountId, creation_id: "{{creation_id}}" },
+      },
     ];
   }
 

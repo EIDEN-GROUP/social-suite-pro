@@ -108,6 +108,7 @@ describe("buildPublishPlan", () => {
     expect(steps).toHaveLength(2);
     expect(steps[0].slug).toBe("INSTAGRAM_POST_IG_USER_MEDIA");
     expect(steps[0].args.ig_user_id).toBe("ig_42");
+    expect(steps[1].args.ig_user_id).toBe("ig_42");
     expect(steps[1].args.creation_id).toBe("{{creation_id}}");
   });
 
