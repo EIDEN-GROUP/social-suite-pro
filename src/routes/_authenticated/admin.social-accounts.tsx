@@ -171,8 +171,8 @@ function SocialAccountsPage() {
       <div className="mx-auto max-w-6xl px-6 py-8">
         {!configured && (
           <p className="mb-6 rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Composio is not configured. Set <span className="font-mono">COMPOSIO_API_KEY</span> to
-            connect accounts and publish.
+            Connections aren't configured yet. Add the integration API key to the server environment
+            to connect accounts and publish.
           </p>
         )}
 
@@ -333,9 +333,7 @@ function SocialAccountsPage() {
 
         {companies.length > 0 && (
           <div className="mt-10 rounded border editorial-rule p-5">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">
-              Sync from Composio
-            </p>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground">Sync accounts</p>
             <p className="mt-1 text-sm text-muted-foreground">
               Pull the latest accounts, statuses and permissions for a client.
             </p>

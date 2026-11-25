@@ -31,22 +31,17 @@ export const platformAvailability = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("integration_configs")
-      .select("platform, auth_config_id, enabled, auth_mode");
+      .select("platform, auth_config_id, enabled");
     const configs = new Map((data ?? []).map((c) => [c.platform, c]));
     return {
       configured: isComposioConfigured(),
-      platforms: PLATFORMS.map((p) => {
-        const custom = configs.get(p)?.auth_mode === "custom";
-        return {
-          platform: p,
-          configured:
-            Boolean(configs.get(p)?.auth_config_id) ||
-            Boolean(process.env[`COMPOSIO_AUTH_CONFIG_${p.toUpperCase()}`]),
-          enabled: configs.get(p)?.enabled ?? true,
-          custom,
-          hosted: !custom,
-        };
-      }),
+      platforms: PLATFORMS.map((p) => ({
+        platform: p,
+        configured:
+          Boolean(configs.get(p)?.auth_config_id) ||
+          Boolean(process.env[`COMPOSIO_AUTH_CONFIG_${p.toUpperCase()}`]),
+        enabled: configs.get(p)?.enabled ?? true,
+      })),
     };
   });
 
@@ -89,92 +84,14 @@ export const getConnectionLink = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     await (await import("@/lib/server-auth.server")).requireSuperadmin();
-    const { startConnection } = await import("@/lib/publishing/composio.server");
+    const { createConnectionLink } = await import("@/lib/publishing/composio.server");
     const { getRequest } = await import("@tanstack/react-start/server");
     const request = getRequest();
     const requestOrigin = request ? new URL(request.url).origin : "";
     const base = (process.env.APP_BASE_URL || requestOrigin).replace(/\/$/, "");
     if (!base) throw new Error("Could not determine the app base URL for the OAuth callback.");
     const callbackUrl = `${base}/admin/connect?connected=1&company=${data.companyId}&platform=${data.platform}`;
-    return startConnection(data.companyId, data.platform as Platform, callbackUrl);
-  });
-
-/**
- * Connection mode per platform: whether we can start the flow directly at the
- * provider (your own OAuth app) or Composio's hosted page will be used.
- */
-export const connectionModes = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({}).parse(input ?? {}))
-  .handler(async () => {
-    await (await import("@/lib/server-auth.server")).requireSuperadmin();
-    const { getAuthConfigInfo } = await import("@/lib/publishing/composio.server");
-    const modes = await Promise.all(PLATFORMS.map((p) => getAuthConfigInfo(p as Platform)));
-    return { modes };
-  });
-
-/**
- * Registers which Composio auth config a platform uses. Paste the `ac_...` id of
- * a **custom** auth config (created in the Composio dashboard with your own OAuth
- * app) to make connections start directly at the provider.
- */
-export const setAuthConfig = createServerFn({ method: "POST" })
-  .inputValidator((input) =>
-    z
-      .object({
-        platform: z.enum(PLATFORMS),
-        authConfigId: z
-          .string()
-          .trim()
-          .regex(/^ac_[A-Za-z0-9]+$/, "Auth config ids look like ac_xxxxxxxx"),
-      })
-      .parse(input),
-  )
-  .handler(async ({ data }) => {
-    await (await import("@/lib/server-auth.server")).requireSuperadmin();
-    const { describeAuthConfig, PLATFORM_TOOLKIT } =
-      await import("@/lib/publishing/composio.server");
-    const info = await describeAuthConfig(data.authConfigId);
-    const expectedToolkit = PLATFORM_TOOLKIT[data.platform as Platform];
-    if (info.toolkit && info.toolkit !== expectedToolkit) {
-      throw new Error(
-        `That auth config is for "${info.toolkit}", not "${expectedToolkit}". Pick the right one.`,
-      );
-    }
-    const custom = !info.isComposioManaged;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("integration_configs").upsert(
-      {
-        platform: data.platform,
-        toolkit: expectedToolkit,
-        auth_config_id: data.authConfigId,
-        auth_mode: custom ? "custom" : "managed",
-        enabled: true,
-        provisioning_error: null,
-      },
-      { onConflict: "platform" },
-    );
-    if (error) throw new Error(error.message);
-    return { ok: true as const, custom, isComposioManaged: info.isComposioManaged };
-  });
-
-/** Clears a platform's auth config so the next connect creates a managed one. */
-export const clearAuthConfig = createServerFn({ method: "POST" })
-  .inputValidator((input) => z.object({ platform: z.enum(PLATFORMS) }).parse(input))
-  .handler(async ({ data }) => {
-    await (await import("@/lib/server-auth.server")).requireSuperadmin();
-    const { PLATFORM_TOOLKIT } = await import("@/lib/publishing/composio.server");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("integration_configs").upsert(
-      {
-        platform: data.platform,
-        toolkit: PLATFORM_TOOLKIT[data.platform as Platform],
-        auth_config_id: null,
-        auth_mode: "managed",
-        enabled: true,
-      },
-      { onConflict: "platform" },
-    );
-    return { ok: true as const };
+    return createConnectionLink(data.companyId, data.platform as Platform, callbackUrl);
   });
 
 /**
