@@ -545,41 +545,99 @@ function Facebook({
   posts: Post[];
   onTap?: (p: Post) => void;
 }) {
+  const accent = company.accent_color || "#1877F2";
+  const [tab, setTab] = useState<"posts" | "reels">("posts");
+
+  // Posts and Reels are separated, never mixed (matches the Page's tabs).
+  const feedPosts = posts.filter((p) => p.post_type === "post" || p.post_type === "carousel");
+  const reels = posts.filter((p) => p.post_type === "reel");
+
   return (
     <div className="text-sm">
       <BizHeader company={company} variant="facebook" />
-      <div className="space-y-3 px-3 pb-6 pt-3">
-        {posts.slice(0, 5).map((p) => (
+
+      {/* Page tab bar - Posts / Reels switch */}
+      <div className="flex overflow-x-auto border-b border-foreground/10">
+        {(
+          [
+            { id: "posts", label: "Posts" },
+            { id: "reels", label: "Reels" },
+          ] as const
+        ).map((t) => (
           <button
-            key={p.id}
-            onClick={() => onTap?.(p)}
-            className={`block w-full rounded-md border border-foreground/10 bg-card text-left ${statusRing(p.status)}`}
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`shrink-0 border-b-2 px-4 py-2 text-xs font-semibold uppercase tracking-wide ${
+              tab === t.id ? "" : "border-transparent text-muted-foreground"
+            }`}
+            style={tab === t.id ? { borderBottomColor: accent, color: accent } : undefined}
           >
-            <div className="flex items-center gap-2 p-3">
-              <Avatar company={company} size={36} />
-              <div className="flex-1">
-                <div className="text-xs font-semibold">{company.name}</div>
-                <div className="text-[10px] text-muted-foreground">Sponsored · 🌐</div>
-              </div>
-              <MoreHorizontal className="h-4 w-4" />
-            </div>
-            {p.caption && <div className="px-3 pb-2 text-xs">{p.caption}</div>}
-            {p.media_url && <Media post={p} className="w-full" controls />}
-            <div className="flex justify-around border-t border-foreground/10 p-2 text-[11px] text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <ThumbsUp className="h-3 w-3" /> Like
-              </span>
-              <span className="flex items-center gap-1">
-                <MessageCircle className="h-3 w-3" /> Comment
-              </span>
-              <span className="flex items-center gap-1">
-                <Send className="h-3 w-3" /> Share
-              </span>
-            </div>
+            {t.label}
           </button>
         ))}
-        {posts.length === 0 && <Empty />}
       </div>
+
+      {tab === "posts" ? (
+        <div className="space-y-3 px-3 pb-6 pt-3">
+          {feedPosts.slice(0, 5).map((p) => (
+            <button
+              key={p.id}
+              onClick={() => onTap?.(p)}
+              className={`block w-full rounded-md border border-foreground/10 bg-card text-left ${statusRing(p.status)}`}
+            >
+              <div className="flex items-center gap-2 p-3">
+                <Avatar company={company} size={36} />
+                <div className="flex-1">
+                  <div className="text-xs font-semibold">{company.name}</div>
+                  <div className="text-[10px] text-muted-foreground">Sponsored · 🌐</div>
+                </div>
+                <MoreHorizontal className="h-4 w-4" />
+              </div>
+              {p.caption && <div className="px-3 pb-2 text-xs">{p.caption}</div>}
+              {p.media_url && <Media post={p} className="w-full" controls />}
+              <div className="flex justify-around border-t border-foreground/10 p-2 text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <ThumbsUp className="h-3 w-3" /> Like
+                </span>
+                <span className="flex items-center gap-1">
+                  <MessageCircle className="h-3 w-3" /> Comment
+                </span>
+                <span className="flex items-center gap-1">
+                  <Send className="h-3 w-3" /> Share
+                </span>
+              </div>
+            </button>
+          ))}
+          {feedPosts.length === 0 && (
+            <div className="py-10 text-center text-[10px] text-muted-foreground">No posts yet.</div>
+          )}
+        </div>
+      ) : (
+        <div className="px-3 pb-6 pt-3">
+          {reels.length === 0 ? (
+            <div className="py-10 text-center text-[10px] text-muted-foreground">No reels yet.</div>
+          ) : (
+            <div className="grid grid-cols-2 gap-1.5">
+              {reels.slice(0, 9).map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => onTap?.(p)}
+                  className={`relative aspect-[9/16] overflow-hidden rounded-md bg-foreground/5 ${statusRing(p.status)}`}
+                >
+                  {p.media_url ? (
+                    <Media post={p} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-[10px] text-foreground/30">
+                      Reel
+                    </div>
+                  )}
+                  <Play className="absolute bottom-1.5 left-1.5 h-3.5 w-3.5 fill-white text-white drop-shadow" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
