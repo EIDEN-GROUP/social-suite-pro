@@ -134,6 +134,13 @@ That badge lives on **Composio's hosted connect page** only. There is:
   `/auth_screen`, `/branding`, … on `backend.composio.dev/api/v3.1` returns 404,
   so it's dashboard-only (and the badge has no documented toggle).
 
+> **You can't skip the hosted page on Composio-managed auth.** Composio retired
+> that path — `connectedAccounts.initiate(...)` with a managed auth config
+> returns `400 ConnectedAccount_BadRequest`: _"Creating connections on this
+> endpoint for Composio-managed OAuth auth configs is no longer supported. Use
+> POST /api/v3/connected_accounts/link instead."_ So until a platform has its own
+> OAuth app, Composio's hosted page (and the badge) will appear.
+
 Two ways forward:
 
 1. **Skip the hosted page (recommended, already implemented).** With your own

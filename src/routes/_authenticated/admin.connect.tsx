@@ -42,7 +42,9 @@ function ConnectPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [companyId, setCompanyId] = useState(search.company ?? "");
   const [platforms, setPlatforms] = useState<Availability[]>([]);
-  const [connecting, setConnecting] = useState<Platform | null>(null);
+  const [connecting, setConnecting] = useState<{ platform: Platform; direct: boolean } | null>(
+    null,
+  );
   const [accounts, setAccounts] = useState<
     {
       id: string;
@@ -104,10 +106,11 @@ function ConnectPage() {
 
   async function connect(platform: Platform) {
     if (!companyId) return toast.error("Select a client first.");
-    setConnecting(platform);
+    setConnecting({ platform, direct: true });
     try {
-      const { redirectUrl } = await getLink({ data: { companyId, platform } });
-      window.location.href = redirectUrl;
+      const res = await getLink({ data: { companyId, platform } });
+      setConnecting({ platform, direct: res.direct });
+      window.location.href = res.redirectUrl;
     } catch (err) {
       toast.error((err as Error).message);
       setConnecting(null);
@@ -176,7 +179,11 @@ function ConnectPage() {
                     )}
                   </span>
                   <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-                    {connecting === p.id ? "Opening…" : disabled ? "Not configured" : "Connect"}
+                    {connecting?.platform === p.id
+                      ? "Opening…"
+                      : disabled
+                        ? "Not configured"
+                        : "Connect"}
                     {!disabled && <ArrowRight className="h-3.5 w-3.5" />}
                   </span>
                 </button>
@@ -193,6 +200,13 @@ function ConnectPage() {
           >
             Use your own OAuth app (custom consent screen) <ArrowRight className="h-3 w-3" />
           </Link>
+          {platforms.some((p) => p.configured && p.enabled && p.mode !== "custom") && (
+            <p className="mt-3 rounded border border-amber-300/60 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-900">
+              Some platforms still use Composio's hosted connect page (it shows a "Secured by
+              Composio" badge). Set up your own OAuth app below to send people straight to the
+              provider instead.
+            </p>
+          )}
         </div>
 
         {selectedCompany && (
@@ -260,11 +274,18 @@ function ConnectPage() {
               <Loader2 className="h-5 w-5 animate-spin text-foreground/60" />
               <div className="min-w-0">
                 <p className="truncate font-display text-xl">
-                  {PLATFORMS.find((p) => p.id === connecting)?.label}
+                  {PLATFORMS.find((p) => p.id === connecting.platform)?.label}
                 </p>
-                <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                  You'll authorize on the provider, then come straight back here.
-                </p>
+                {connecting.direct ? (
+                  <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                    You'll authorize on the provider, then come straight back here.
+                  </p>
+                ) : (
+                  <p className="mt-0.5 text-xs leading-relaxed text-amber-700">
+                    Composio's hosted page appears first because this platform isn't on your own
+                    OAuth app yet. Set one up in Auth setup to skip it.
+                  </p>
+                )}
               </div>
             </div>
             <p className="mt-4 flex items-center gap-1.5 border-t editorial-rule pt-3 text-[11px] text-muted-foreground">
