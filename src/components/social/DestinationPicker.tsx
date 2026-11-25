@@ -1,15 +1,18 @@
-import { useState } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Check, ChevronDown } from "lucide-react";
 import type { Platform } from "@/lib/types";
 import { listSocialDestinations, setSocialDestination } from "@/lib/social/social.functions";
+import { normalizeLinkedInAuthor } from "@/lib/publishing/platforms";
 
 const LABEL: Partial<Record<Platform, string>> = {
   facebook: "Facebook Page",
   instagram: "Instagram account",
   linkedin: "LinkedIn author",
 };
+
+const FOCUSABLE = 'a[href], button:not([disabled]), input, [tabindex]:not([tabindex="-1"])';
 
 function emptyHint(platform: Platform): string {
   if (platform === "facebook") {
@@ -52,7 +55,47 @@ export function DestinationPicker({
   const [manualEnabled, setManualEnabled] = useState(false);
   const [manualHint, setManualHint] = useState<string | null>(null);
 
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
+
   const label = LABEL[platform] ?? "Destination";
+
+  // Move focus into the dialog on open, and restore it to the trigger on close.
+  useEffect(() => {
+    if (open) {
+      wasOpen.current = true;
+      const focusables = panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE);
+      focusables?.[0]?.focus();
+    } else if (wasOpen.current) {
+      wasOpen.current = false;
+      triggerRef.current?.focus();
+    }
+  }, [open]);
+
+  function onOverlayKeyDown(e: KeyboardEvent) {
+    if (e.key === "Escape") {
+      // Blocked while saving so a failed save is not silently hidden.
+      if (!busy) setOpen(false);
+      return;
+    }
+    if (e.key !== "Tab") return;
+    const focusables = panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE);
+    if (!focusables || focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement as HTMLElement | null;
+    if (e.shiftKey) {
+      if (active === first || !panelRef.current?.contains(active)) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else if (active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
 
   async function openPicker() {
     setOpen(true);
@@ -94,6 +137,7 @@ export function DestinationPicker({
   return (
     <>
       <button
+        ref={triggerRef}
         onClick={openPicker}
         className="inline-flex items-center gap-1.5 rounded-sm border editorial-rule px-2.5 py-1.5 hover:bg-foreground/5"
         title={`Choose the ${label}`}
@@ -106,10 +150,15 @@ export function DestinationPicker({
 
       {open && (
         <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
           className="fixed inset-0 z-[80] flex items-center justify-center bg-foreground/50 p-4"
           onClick={() => !busy && setOpen(false)}
+          onKeyDown={onOverlayKeyDown}
         >
           <div
+            ref={panelRef}
             className="max-h-[80vh] w-full max-w-sm overflow-y-auto rounded-lg bg-background shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -117,7 +166,9 @@ export function DestinationPicker({
               <p className="text-xs uppercase tracking-widest text-muted-foreground">
                 Choose {label}
               </p>
-              <h3 className="font-display text-xl">Publishing destination</h3>
+              <h3 id={titleId} className="font-display text-xl">
+                Publishing destination
+              </h3>
             </div>
 
             {loading ? (
@@ -162,17 +213,31 @@ export function DestinationPicker({
                         value={manual}
                         onChange={(e) => setManual(e.target.value)}
                         placeholder="e.g. 2414183"
-                        className="min-w-0 flex-1 rounded-sm border editorial-rule bg-background px-2.5 py-1.5 text-sm outline-none focus:border-foreground/40"
+                        className="min-w-0 flex-1 rounded-sm border editorial-rule bg-transparent px-2.5 py-1.5 text-sm outline-none focus:border-foreground/40"
                       />
                       <button
                         type="button"
                         disabled={busy || !manual.trim()}
-                        onClick={() => choose({ id: manual.trim(), name: manual.trim() })}
+                        onClick={() =>
+                          choose(
+                            platform === "linkedin"
+                              ? {
+                                  id: normalizeLinkedInAuthor(manual.trim()).urn,
+                                  name: manual.trim(),
+                                }
+                              : { id: manual.trim(), name: manual.trim() },
+                          )
+                        }
                         className="shrink-0 rounded-sm bg-foreground px-3 py-1.5 text-sm text-background disabled:opacity-40"
                       >
                         Save
                       </button>
                     </div>
+                    {platform === "linkedin" && manual.trim() && (
+                      <p className="mt-2 text-[11px] text-muted-foreground">
+                        Will save as {normalizeLinkedInAuthor(manual.trim()).urn}
+                      </p>
+                    )}
                     {manualHint && (
                       <p className="mt-2 text-[11px] text-muted-foreground">{manualHint}</p>
                     )}

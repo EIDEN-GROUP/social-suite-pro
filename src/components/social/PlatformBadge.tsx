@@ -10,14 +10,14 @@ export const PLATFORM_META: Record<
   instagram: {
     label: "Instagram",
     Icon: Instagram,
-    chip: "bg-gradient-to-br from-amber-400 via-pink-500 to-purple-600 text-white",
+    chip: "bg-gradient-to-br from-pink-600 via-fuchsia-600 to-purple-700 text-white",
     dot: "bg-pink-500",
   },
   tiktok: { label: "TikTok", Icon: Music2, chip: "bg-black text-white", dot: "bg-teal-500" },
   facebook: {
     label: "Facebook",
     Icon: Facebook,
-    chip: "bg-[#1877F2] text-white",
+    chip: "bg-[#0C5EC4] text-white",
     dot: "bg-blue-600",
   },
   twitter: { label: "X", Icon: AtSign, chip: "bg-neutral-900 text-white", dot: "bg-neutral-800" },
@@ -62,7 +62,7 @@ const STATUS_META: Record<AccountStatus, { label: string; cls: string; dot: stri
   },
   attention_required: {
     label: "Attention Required",
-    cls: "bg-amber-400/20 text-amber-700",
+    cls: "bg-amber-400/20 text-amber-800",
     dot: "bg-amber-500",
   },
   expired: { label: "Expired", cls: "bg-orange-500/15 text-orange-700", dot: "bg-orange-500" },
