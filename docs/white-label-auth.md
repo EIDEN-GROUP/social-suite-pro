@@ -1,55 +1,97 @@
-# Connect page branding (Composio-managed)
+# Custom connect interface (Composio backend)
 
-The app connects client accounts through **Composio-managed auth only**. No
-per-platform OAuth app credentials are configured here, and there is no in-app
-“use your own app” screen.
+The connection experience is **ours**: our own page, cards, loading states,
+success/error notifications, account details and disconnect. Composio stays the
+backend for OAuth, tokens, refresh, connected accounts and every publishing /
+analytics call.
 
-## The flow
+## Flow
 
-1. Admin → **Connect** → pick the client + platform.
-2. `connectedAccounts.link(...)` returns Composio's hosted page. Verified host:
-   `https://connect.composio.dev/link/lk_xxxxxxxx`
-   (Composio also serves this on `dashboard.composio.dev/link/...` for some
-   projects — both are Composio-owned domains.)
-3. Composio shows its connect page → the provider shows its sign-in/consent
-   screen → the browser returns to
-   `/admin/connect?connected=1&company=…&platform=…`, and we sync the account.
+```
+Admin -> Connect (our UI)
+  -> our server fn: getConnectionLink
+       -> startConnection()
+            custom auth config  -> connectedAccounts.initiate(long_redirect_url)
+                                   => browser goes STRAIGHT to the provider
+            managed auth config -> connectedAccounts.link()
+                                   => Composio's hosted connect page is shown
+  -> provider authorizes
+  -> Composio handles the callback + token exchange
+  -> back to /admin/connect?connected=1&company=…&platform=…&connected_account_id=…
+  -> we verify the returned account belongs to this client, then sync
+  -> our UI shows the account as connected
+```
 
-## What can be changed
+Nothing sensitive reaches the browser: the Composio API key stays on the server,
+account reads are redacted by Composio, and connected-account ids are only used
+server-side for sync/publish.
 
-Composio dashboard → **Project Settings → White Labeling**:
+## Accountability / safety
 
-- **Branding**: App Title (replaces “Composio” in the heading) and a square
-  logo (256–1024 px).
-- **Styling**: page/card/foreground colours, accent colours, fonts, corner
-  radius, border width, and per-element overrides. There's a JSON toggle for
-  bulk edits, and contrast is enforced.
+- **Client isolation** — Composio user ids are namespaced per client
+  (`client_<companyId>`); every read is scoped to that user.
+- **Callback ownership** — on return we call `verifyReturnedConnection`, which
+  checks the returned `connected_account_id` exists inside this client's
+  namespace before syncing. A mismatched id is ignored.
+- **No token exposure** — we never store or return provider tokens.
+- **Disconnect** — calls Composio to delete the account and marks the row
+  `disconnected` so a later sync can't resurrect it.
 
-Suggested values to match this project:
+## Removing Composio's hosted page per platform
 
-| Setting | Value |
-| --- | --- |
-| Background | `#F7F7F8` |
-| Card | `#FFFFFF` |
-| Foreground | `#111827` |
-| Primary | `#111827` |
-| Secondary | `#6366F1` |
-| Tertiary | `#E5E7EB` |
-| Radius / border | `12px` / `1px` |
+Composio **retired** direct starts for its managed apps — `initiate()` with a
+managed auth config returns:
 
-Branding is **per Composio project**, not per client, and applies to every
-toolkit.
+> `400 ConnectedAccount_BadRequest` — _"Creating connections on this endpoint for
+> Composio-managed OAuth auth configs is no longer supported. Use POST
+> /api/v3/connected_accounts/link instead."_
 
-## What cannot be changed
+So the Composio page can only be skipped with a **custom auth config** (your own
+OAuth app). To do that, per platform:
 
-- The **“Secured by Composio” badge** — it isn't one of the editable elements,
-  and Composio exposes no API for these settings (all attempts to read/write
-  white-label settings return 404). Only Composio support/plan can remove it.
-- The **hosted domain** (`connect.composio.dev` / `dashboard.composio.dev`) —
-  there is no CNAME or custom-domain option in Composio Cloud.
-- The **provider's own sign-in / consent screen** — its identity comes from the
-  OAuth app in use (Composio's shared app here), and its page is not stylable.
+1. Register an OAuth app with the provider and set its authorized redirect URI to
+   `https://backend.composio.dev/api/v3/toolkits/auth/callback`.
+2. In the Composio dashboard → **Auth Configs → Create** → pick the toolkit →
+   **OAuth2** → “use your own developer credentials” → paste the provider's
+   client id/secret → save and copy the `ac_…` id.
+3. In this app → Admin → **Connect** → expand **Connection setup** → paste the
+   `ac_…` id for that platform → **Save**. The platform chip turns to
+   **Direct** and connecting goes straight to the provider.
 
-Skipping the hosted page entirely would require your own OAuth app per platform,
-which is **not configured in this app**. If that changes, the server-side pieces
-are in git history (see the commits around “white-label OAuth”).
+Verified direct targets (probe with throwaway configs, then deleted):
+
+| Toolkit   | Direct redirect                           | Notes                                                       |
+| --------- | ----------------------------------------- | ----------------------------------------------------------- |
+| Instagram | `www.instagram.com/oauth/authorize`       |                                                             |
+| Facebook  | `www.facebook.com/…/dialog/oauth`         |                                                             |
+| LinkedIn  | `www.linkedin.com/oauth/v2/authorization` |                                                             |
+| TikTok    | `www.tiktok.com/v2/auth/authorize/`       |                                                             |
+| X         | `x.com/i/oauth2/authorize`                | Custom config also needs the app's Application Bearer Token |
+
+Providers with no custom auth config keep using Composio's hosted page (its
+branding and domain are Composio's and cannot be removed from here), but the
+**surrounding experience is still ours** — our page, our states, our account
+list, our disconnect.
+
+## Testing
+
+For each platform:
+
+1. Select the client, click **Connect**.
+2. Expect our "Connecting" overlay; then either the provider directly (Direct
+   chip) or Composio's page (Composio page chip).
+3. Authorize; you should land back on Admin → Connect with a success toast and
+   the account listed with its avatar, name/handle and status badge.
+4. Use **Refresh** / **Sync from Composio**, set the publish destination where the
+   platform needs one (Facebook Page / Instagram / LinkedIn), then **Disconnect**
+   and confirm the row flips to disconnected.
+5. Publish a post from the client's page to confirm publishing still works.
+
+## Limitations
+
+- Composio-managed platforms always show Composio's hosted page.
+- The hosted page's domain and “Secured by Composio” badge can't be changed; only
+  its logo/title/theme (Composio → Project Settings → White Labeling).
+- The provider's own consent screen identity comes from the OAuth app in use.
+- X's custom config needs an extra credential (`generic_id`, the app's bearer
+  token), which the Composio dashboard form collects.

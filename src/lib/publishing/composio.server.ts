@@ -90,6 +90,62 @@ async function persistAuthConfig(platform: Platform, toolkit: string, authConfig
     );
 }
 
+/**
+ * Where Composio sends the OAuth provider back after authorization. Register the
+ * provider's authorized redirect URI as this exact URL when using your own OAuth
+ * app so the connection can start directly at the provider.
+ */
+export const COMPOSIO_OAUTH_CALLBACK = "https://backend.composio.dev/api/v3/toolkits/auth/callback";
+
+export type AuthMode = "managed" | "custom";
+
+export type AuthConfigInfo = {
+  platform: Platform;
+  toolkit: string;
+  authConfigId: string | null;
+  /** True when this platform uses your own OAuth app (direct-to-provider start). */
+  custom: boolean;
+  /** True when Composio's hosted connect page will be shown (Composio-managed). */
+  hosted: boolean;
+  redirectUri: string;
+};
+
+/** Which auth config a platform uses, and whether we can start directly. */
+export async function getAuthConfigInfo(platform: Platform): Promise<AuthConfigInfo> {
+  const toolkit = PLATFORM_TOOLKIT[platform];
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("integration_configs")
+    .select("auth_config_id, auth_mode, oauth_redirect_uri")
+    .eq("platform", platform)
+    .maybeSingle();
+  const envId = process.env[`COMPOSIO_AUTH_CONFIG_${platform.toUpperCase()}`] || null;
+  const authConfigId = data?.auth_config_id || envId;
+  const custom = (data?.auth_mode as AuthMode | undefined) === "custom";
+  return {
+    platform,
+    toolkit,
+    authConfigId,
+    custom,
+    hosted: !custom,
+    redirectUri: (data?.oauth_redirect_uri as string | null) || COMPOSIO_OAUTH_CALLBACK,
+  };
+}
+
+/** Reads a Composio auth config to confirm it exists and how it authenticates. */
+export async function describeAuthConfig(
+  authConfigId: string,
+): Promise<{ toolkit: string; isComposioManaged: boolean }> {
+  let cfg: { toolkit?: { slug?: string } | string; isComposioManaged?: boolean };
+  try {
+    cfg = (await composio().authConfigs.get(authConfigId)) as typeof cfg;
+  } catch {
+    throw new Error("That auth config id doesn't exist in this Composio project.");
+  }
+  const toolkit = typeof cfg?.toolkit === "string" ? cfg.toolkit : (cfg?.toolkit?.slug ?? "");
+  return { toolkit, isComposioManaged: Boolean(cfg?.isComposioManaged) };
+}
+
 // ---------------------------------------------------------------------------
 // Connection lifecycle
 // ---------------------------------------------------------------------------
@@ -111,6 +167,80 @@ export async function createConnectionLink(
   const connectionRequestId = (request as { id?: string }).id ?? "";
   if (!redirectUrl) throw new Error("Composio did not return a redirect URL.");
   return { redirectUrl, connectionRequestId };
+}
+
+export type ConnectionStart = {
+  redirectUrl: string;
+  connectionRequestId: string;
+  mode: AuthMode;
+  /** true when the browser goes straight to the provider (no Composio page). */
+  direct: boolean;
+};
+
+/**
+ * Our own connect flow.
+ *
+ * With our own OAuth app (`auth_mode = custom`) we call
+ * `connectedAccounts.initiate()` with `long_redirect_url`, so the browser goes
+ * straight to the provider — Composio's hosted Connect Link page is never shown.
+ * Composio still performs the callback and token exchange.
+ *
+ * Composio-managed configs can't use `initiate()` (Composio retired that path
+ * with `400 ConnectedAccount_BadRequest`), so we fall back to the hosted link.
+ */
+export async function startConnection(
+  companyId: string,
+  platform: Platform,
+  callbackUrl: string,
+): Promise<ConnectionStart> {
+  const info = await getAuthConfigInfo(platform);
+  const authConfigId = info.authConfigId ?? (await getAuthConfigId(platform, { create: true }));
+
+  if (info.custom) {
+    try {
+      const request = await composio().connectedAccounts.initiate(
+        composioUserId(companyId),
+        authConfigId,
+        {
+          callbackUrl,
+          allowMultiple: true,
+          config: {
+            authScheme: "OAUTH2",
+            val: { status: "INITIALIZING", long_redirect_url: true },
+          },
+        } as never,
+      );
+      const redirectUrl = (request as { redirectUrl?: string }).redirectUrl;
+      const connectionRequestId = (request as { id?: string }).id ?? "";
+      if (redirectUrl) {
+        return { redirectUrl, connectionRequestId, mode: "custom", direct: true };
+      }
+    } catch {
+      /* fall through to the hosted link so connecting still works */
+    }
+  }
+
+  const link = await createConnectionLink(companyId, platform, callbackUrl);
+  return {
+    redirectUrl: link.redirectUrl,
+    connectionRequestId: link.connectionRequestId,
+    mode: "managed",
+    direct: false,
+  };
+}
+
+/** Confirms a returned connected account belongs to this client before syncing. */
+export async function assertAccountOwnership(
+  companyId: string,
+  platform: Platform,
+  connectedAccountId: string,
+): Promise<boolean> {
+  try {
+    const accounts = await listConnectedAccounts(companyId, PLATFORM_TOOLKIT[platform]);
+    return accounts.some((a) => a.connectedAccountId === connectedAccountId);
+  } catch {
+    return false;
+  }
 }
 
 export type NormalizedConnectedAccount = {
