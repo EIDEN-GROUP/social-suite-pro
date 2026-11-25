@@ -15,7 +15,6 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as CSlugRouteImport } from './routes/c.$slug'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
-import { Route as AuthenticatedAdminAuthConfigsRouteImport } from './routes/_authenticated/admin.auth-configs'
 import { Route as AuthenticatedAdminCalendarRouteImport } from './routes/_authenticated/admin.calendar'
 import { Route as AuthenticatedAdminConnectRouteImport } from './routes/_authenticated/admin.connect'
 import { Route as AuthenticatedAdminSocialAccountsRouteImport } from './routes/_authenticated/admin.social-accounts'
@@ -55,12 +54,6 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
-const AuthenticatedAdminAuthConfigsRoute =
-  AuthenticatedAdminAuthConfigsRouteImport.update({
-    id: '/auth-configs',
-    path: '/auth-configs',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
 const AuthenticatedAdminCalendarRoute =
   AuthenticatedAdminCalendarRouteImport.update({
     id: '/calendar',
@@ -119,7 +112,6 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/c/$slug': typeof CSlugRoute
-  '/admin/auth-configs': typeof AuthenticatedAdminAuthConfigsRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/connect': typeof AuthenticatedAdminConnectRoute
   '/admin/social-accounts': typeof AuthenticatedAdminSocialAccountsRoute
@@ -135,7 +127,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/c/$slug': typeof CSlugRoute
-  '/admin/auth-configs': typeof AuthenticatedAdminAuthConfigsRoute
   '/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/admin/connect': typeof AuthenticatedAdminConnectRoute
   '/admin/social-accounts': typeof AuthenticatedAdminSocialAccountsRoute
@@ -154,7 +145,6 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/c/$slug': typeof CSlugRoute
-  '/_authenticated/admin/auth-configs': typeof AuthenticatedAdminAuthConfigsRoute
   '/_authenticated/admin/calendar': typeof AuthenticatedAdminCalendarRoute
   '/_authenticated/admin/connect': typeof AuthenticatedAdminConnectRoute
   '/_authenticated/admin/social-accounts': typeof AuthenticatedAdminSocialAccountsRoute
@@ -173,7 +163,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/admin'
     | '/c/$slug'
-    | '/admin/auth-configs'
     | '/admin/calendar'
     | '/admin/connect'
     | '/admin/social-accounts'
@@ -189,7 +178,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/c/$slug'
-    | '/admin/auth-configs'
     | '/admin/calendar'
     | '/admin/connect'
     | '/admin/social-accounts'
@@ -207,7 +195,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/admin'
     | '/c/$slug'
-    | '/_authenticated/admin/auth-configs'
     | '/_authenticated/admin/calendar'
     | '/_authenticated/admin/connect'
     | '/_authenticated/admin/social-accounts'
@@ -271,13 +258,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
-    '/_authenticated/admin/auth-configs': {
-      id: '/_authenticated/admin/auth-configs'
-      path: '/auth-configs'
-      fullPath: '/admin/auth-configs'
-      preLoaderRoute: typeof AuthenticatedAdminAuthConfigsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/calendar': {
@@ -347,7 +327,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAdminRouteChildren {
-  AuthenticatedAdminAuthConfigsRoute: typeof AuthenticatedAdminAuthConfigsRoute
   AuthenticatedAdminCalendarRoute: typeof AuthenticatedAdminCalendarRoute
   AuthenticatedAdminConnectRoute: typeof AuthenticatedAdminConnectRoute
   AuthenticatedAdminSocialAccountsRoute: typeof AuthenticatedAdminSocialAccountsRoute
@@ -359,7 +338,6 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
-  AuthenticatedAdminAuthConfigsRoute: AuthenticatedAdminAuthConfigsRoute,
   AuthenticatedAdminCalendarRoute: AuthenticatedAdminCalendarRoute,
   AuthenticatedAdminConnectRoute: AuthenticatedAdminConnectRoute,
   AuthenticatedAdminSocialAccountsRoute: AuthenticatedAdminSocialAccountsRoute,
